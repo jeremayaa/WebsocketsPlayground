@@ -1,6 +1,5 @@
 import { SensorDataHandler } from './SensorDataHandler.js';
 
-
 const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 const deviceType = isMobile ? 'phone' : 'computer';
 console.log(deviceType);
@@ -16,8 +15,6 @@ const socket = io();
 
 // stwórz instancję klasy odpowiadającej za zbieranie i wysyłanie danych z telefonu
 const sensorHandler = new SensorDataHandler(socket);
-
-
 
 let userID = localStorage.getItem('userID');
 
@@ -47,6 +44,7 @@ if (userID) {
 }
 
 // na komputerze można wygenerować pokój
+const measureButton = document.createElement('button');
 if (deviceType==='computer') {
 
     const RoomCodeField = document.createElement('input');
@@ -65,26 +63,38 @@ if (deviceType==='computer') {
         socket.emit('CreateRoom', (data));
 
         // na komputerze dodaj przycisk 'rozpocznij pomiar'
-        const measureButton = document.createElement('button');
+        
         measureButton.textContent = 'rozpocznij pomiar';
     
         if (deviceType==='computer') {
             roomspace.appendChild(measureButton);
-            measureButton.addEventListener('click', () => {
-                // alert('kilknięcie')
-                // on myśli że to komputer klika! Trzeba najpierw powiedzieć jakie telefony mają
-                // rozpocząć ten pomiar!
-                // sensorHandler.startCapturing();
-                const targetUserID = "Motorola"; // Change to the specific userID of the phone
-                socket.emit('StartMeasurementOnPhone', {userID: targetUserID});
-            })
         }
         });
 
-
-    
 }
 
+measureButton.addEventListener('click', () => {
+    const checkboxes = document.querySelectorAll('input[type="checkbox"][id$="-checkbox"]');
+
+    checkboxes.forEach((checkbox) => {
+        // Check if the checkbox is checked
+        const userID = checkbox.id.replace('-checkbox', '');
+        if (checkbox.checked) {
+            // Extract the userID from the checkbox ID (e.g., "Motorola-checkbox" -> "Motorola")
+
+            // Emit the 'StartMeasurementOnPhone' event for each checked sensor
+            socket.emit('StartMeasurementOnPhone', { userID });
+            console.log(`Started measurement on phone for userID: ${userID}`);
+        } else {
+            socket.emit('StopMeasurementOnPhone', { userID });
+        }
+    });
+})
+
+socket.on('giveSensors', (sensors) => {
+    // alert(sensors);
+    console.log(sensors);
+})
 
 // Gdy zaproszenie zostanie wysłane dodaj przycisk umożliwiający na dołaczenie do pokoju
 socket.on('Invitation', (RoomName) => {
@@ -99,9 +109,12 @@ socket.on('Invitation', (RoomName) => {
     let data = {RoomName, userID};
     JoinRoomButton.addEventListener('click', () => {
         socket.emit('joinRoom', (data));
+        // zapobiega ponownemu dołączeniu do pokoju
+        messagesDiv.removeChild(JoinRoomButton);
         })
 
 });
+
 
 
 // Wyświetl informację o innych użytkownikach którzy dołączyli do servera
@@ -111,6 +124,20 @@ socket.on('SendInfoAboutJoining', (data) => {
     const parragraph = document.createElement('p');
     parragraph.textContent = `Room ${data.RoomName} was joined by ${data.userID}`;
     messagesDiv.appendChild(parragraph);
+
+    if (deviceType==='computer') {
+        // messagesDiv.
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.id = `${data.userID}-checkbox`;
+
+        const label = document.createElement("label");
+        label.htmlFor = "myCheckbox";
+        label.textContent = "Enable sensor"; // Change the text to whatever you like
+
+        messagesDiv.appendChild(checkbox);
+        messagesDiv.appendChild(label);
+    }
 
 });
 
@@ -125,9 +152,9 @@ socket.on('ShowSensorData', (data) => {
 
 socket.on('StartCapturingSensorData', () => {
     console.log('Received request to start capturing sensor data from computer');
-    // Create instance of SensorDataHandler if not already created
-    if (!window.sensorHandler) {
-        window.sensorHandler = new SensorDataHandler(socket);
-    }
-    window.sensorHandler.startCapturing();
+    sensorHandler.startCapturing();
 });
+
+socket.on('StopCapturingSensorData', () => {
+    sensorHandler.stopCapturing();
+})

@@ -62,6 +62,13 @@ class SocketHandler {
                 }
             });
 
+            socket.on('StopMeasurementOnPhone', (data) => {
+                const { userID } = data;
+                const phoneSocketId = this.clients[userID];
+                this.io.to(phoneSocketId).emit('StopCapturingSensorData');
+                console.log(`Data measurment on (${userID}) stopped`);
+            })
+
             // Aktualizuj listę użytkowników w pokoju
             socket.on('joinRoom', (data) => {
                 const {RoomName, userID} = data;
@@ -70,6 +77,12 @@ class SocketHandler {
                 console.log(`wszyscy w serwerze to ${room.sensors}`);
                 this.io.emit('SendInfoAboutJoining', (data));
             });
+
+            socket.on('getSensors', () => {
+                // console.log(room.getSensors());
+                socket.emit('giveSensors', (room.getSensors()));
+            })
+
 
             socket.on('sensorData', (data) => {
                 this.io.emit('ShowSensorData', (data));
@@ -103,6 +116,10 @@ class Room {
         this.name = name;
         this.host = host;
         this.sensors = [];
+    }
+
+    getSensors() {
+        return this.sensors;
     }
 }
 
