@@ -50,6 +50,7 @@ export class SensorDataHandler {
     }
     
     sendData() {
+        console.log('sendData');
         this.socket.emit('sensorData', {
             alpha: this.alpha,
             beta: this.beta,

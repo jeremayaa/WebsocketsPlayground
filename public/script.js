@@ -29,7 +29,6 @@ if (!userID) {
     content.appendChild(UserNameField);
     content.appendChild(SaveUsernameButton);
 
-    
     SaveUsernameButton.addEventListener('click', () => {
         const UserName = UserNameField.value;
         localStorage.setItem('userID', UserName);
@@ -39,6 +38,7 @@ if (!userID) {
 // Emituj event 'setUserID -> plik server.js tworzy mapę socket.id do userID. 
 // Jest to konieczne, bo socket.id zmienia się za każdym razem gdy odświerzymy stronę
 // user id jest przechowywane w pamięci urządzenia i jest zapamiętapne przy każdym nastęnym uruchomienu strony
+
 if (userID) {
     socket.emit('setUserID', userID); 
 }
@@ -49,7 +49,7 @@ if (deviceType==='computer') {
 
     const RoomCodeField = document.createElement('input');
     RoomCodeField.type = 'text';
-    RoomCodeField.placeholder = 'Enter room code'
+    RoomCodeField.placeholder = 'Enter room code';
     const CreateRoomButton = document.createElement('button');
     CreateRoomButton.textContent = 'Create room';
 
@@ -63,7 +63,6 @@ if (deviceType==='computer') {
         socket.emit('CreateRoom', (data));
 
         // na komputerze dodaj przycisk 'rozpocznij pomiar'
-        
         measureButton.textContent = 'rozpocznij pomiar';
     
         if (deviceType==='computer') {
@@ -73,23 +72,8 @@ if (deviceType==='computer') {
 
 }
 
-measureButton.addEventListener('click', () => {
-    const checkboxes = document.querySelectorAll('input[type="checkbox"][id$="-checkbox"]');
-
-    checkboxes.forEach((checkbox) => {
-        // Check if the checkbox is checked
-        const userID = checkbox.id.replace('-checkbox', '');
-        if (checkbox.checked) {
-            // Extract the userID from the checkbox ID (e.g., "Motorola-checkbox" -> "Motorola")
-
-            // Emit the 'StartMeasurementOnPhone' event for each checked sensor
-            socket.emit('StartMeasurementOnPhone', { userID });
-            console.log(`Started measurement on phone for userID: ${userID}`);
-        } else {
-            socket.emit('StopMeasurementOnPhone', { userID });
-        }
-    });
-})
+// measureButton.addEventListener('click', () => {
+const checkboxes = [];
 
 socket.on('giveSensors', (sensors) => {
     // alert(sensors);
@@ -116,20 +100,21 @@ socket.on('Invitation', (RoomName) => {
 });
 
 
-
-// Wyświetl informację o innych użytkownikach którzy dołączyli do servera
 socket.on('SendInfoAboutJoining', (data) => {
-    // const {userID, RoomName} = data;
-
+    
     const parragraph = document.createElement('p');
+    const userID = data.userID;
+    // Wyświetl informację o innych użytkownikach którzy dołączyli do servera
     parragraph.textContent = `Room ${data.RoomName} was joined by ${data.userID}`;
     messagesDiv.appendChild(parragraph);
 
+    // na komputerze wyświetl checkbox umożliwiający rozpoczęcia pomiaru na tym sensorze
     if (deviceType==='computer') {
-        // messagesDiv.
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
         checkbox.id = `${data.userID}-checkbox`;
+        checkboxes.push(checkbox);
+        console.log(checkboxes);
 
         const label = document.createElement("label");
         label.htmlFor = "myCheckbox";
@@ -139,7 +124,18 @@ socket.on('SendInfoAboutJoining', (data) => {
         messagesDiv.appendChild(label);
     }
 
+    // po kliknięciu checkboxa rozpocznij pomiar / po odkliknięciu zakończ
+    const checkbox = document.getElementById(`${data.userID}-checkbox`);
+    checkbox.addEventListener('click', () => {
+        if (checkbox.checked) {
+            socket.emit('StartMeasurementOnPhone', { userID });
+            console.log(`Started measurement on phone for userID: ${userID}`);
+        } else {
+            socket.emit('StopMeasurementOnPhone', { userID });
+        }
+    })
 });
+
 
 const parragraph2 = document.createElement('p');
 messagesDiv.appendChild(parragraph2);

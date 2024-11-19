@@ -85,6 +85,7 @@ class SocketHandler {
 
 
             socket.on('sensorData', (data) => {
+                console.log('sensorData');
                 this.io.emit('ShowSensorData', (data));
             })
 
