@@ -38,10 +38,9 @@ export class SensorDataHandler {
         }
     }
 
-    startCapturing() {
-        console.log('startcapturing');
+    startCapturing(userID) {
         if (this.deviceType === 'phone') {
-            this.interval = setInterval(() => this.sendData(), 33.33); // 30 times per second
+            this.interval = setInterval(() => this.sendData(userID), 33.33); // 30 times per second
         }
     }
     
@@ -49,7 +48,7 @@ export class SensorDataHandler {
         clearInterval(this.interval);
     }
     
-    sendData() {
+    sendData(userID) {
         this.socket.emit('sensorData', {
             alpha: this.alpha,
             beta: this.beta,
@@ -57,6 +56,7 @@ export class SensorDataHandler {
             accX: this.accX,
             accY: this.accY,
             accZ: this.accZ,
+            userid: userID
         });
     }
 }

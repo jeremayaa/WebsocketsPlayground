@@ -91,7 +91,6 @@ socket.on('Invitation', (RoomName) => {
         // zapobiega ponownemu dołączeniu do pokoju
         messagesDiv.removeChild(JoinRoomButton);
         })
-
 });
 
 socket.on('SendInfoAboutJoining', (data) => {
@@ -115,9 +114,17 @@ socket.on('SendInfoAboutJoining', (data) => {
     const checkbox = document.getElementById(`${data.userID}-checkbox`);
     checkbox.addEventListener('click', () => {
         if (checkbox.checked) {
+            const PlaceToShowData = document.createElement('p');
+            PlaceToShowData.id = `${data.userID}-PlaceToShowData`;
+            PlaceToShowData.textContent = `Place To show data ${data.userID}`;
+            roomspace.appendChild(PlaceToShowData);
             socket.emit('StartMeasurementOnPhone', { userID });
             console.log(`Started measurement on phone for userID: ${userID}`);
+
+
         } else {
+            const PlaceToShowData = document.getElementById( `${data.userID}-PlaceToShowData`);
+            roomspace.removeChild(PlaceToShowData);
             socket.emit('StopMeasurementOnPhone', { userID });
         }
     })
@@ -127,22 +134,25 @@ socket.on('SendInfoAboutJoining', (data) => {
 socket.on('SendInfoAboutDisconnection', (userID) => {
     const checkbox = document.getElementById(`${userID}-checkbox`);
     const parragraph = document.getElementById(`${userID}-parragraph`);
+    const PlaceToShowData = document.getElementById(`${userID}-PlaceToShowData`);
     messagesDiv.removeChild(checkbox);
     messagesDiv.removeChild(parragraph);
+    roomspace.removeChild(PlaceToShowData);
 }) 
 
 const parragraph2 = document.createElement('p');
 messagesDiv.appendChild(parragraph2);
 
 socket.on('ShowSensorData', (data) => {
-
-    parragraph2.innerHTML = `a = ${data.alpha}, b = ${data.beta}, g = ${data.gamma}<br>
-            accX = ${data.accX}, accY = ${data.accY}, accZ = ${data.accZ}`;
+    const PlaceToShowData = document.getElementById(`${data.userid}-PlaceToShowData`);
+    PlaceToShowData.innerHTML = `a = ${data.alpha}, b = ${data.beta}, g = ${data.gamma}<br>
+            accX = ${data.accX}, accY = ${data.accY}, accZ = ${data.accZ} <br>
+            userID = ${data.userid}`;
 })
 
-socket.on('StartCapturingSensorData', () => {
+socket.on('StartCapturingSensorData', (userID) => {
     console.log('Received request to start capturing sensor data from computer');
-    sensorHandler.startCapturing();
+    sensorHandler.startCapturing(userID);
 });
 
 socket.on('StopCapturingSensorData', () => {

@@ -57,7 +57,7 @@ class SocketHandler {
 
                 if (phoneSocketId) {
                     console.log(`Requesting phone (${userID}) to start capturing sensor data`);
-                    this.io.to(phoneSocketId).emit('StartCapturingSensorData');
+                    this.io.to(phoneSocketId).emit('StartCapturingSensorData', (userID));
                 } else {
                     console.log(`Phone with userID ${userID} is not connected`);
                 }
