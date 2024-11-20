@@ -103,9 +103,10 @@ socket.on('Invitation', (RoomName) => {
 socket.on('SendInfoAboutJoining', (data) => {
     
     const parragraph = document.createElement('p');
+    parragraph.id = `${data.userID}-parragraph`;
     const userID = data.userID;
     // Wyświetl informację o innych użytkownikach którzy dołączyli do servera
-    parragraph.textContent = `Room ${data.RoomName} was joined by ${data.userID}`;
+    parragraph.textContent = `Enable sensor: ${data.userID}`;
     messagesDiv.appendChild(parragraph);
 
     // na komputerze wyświetl checkbox umożliwiający rozpoczęcia pomiaru na tym sensorze
@@ -113,15 +114,15 @@ socket.on('SendInfoAboutJoining', (data) => {
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
         checkbox.id = `${data.userID}-checkbox`;
-        checkboxes.push(checkbox);
-        console.log(checkboxes);
+        // checkboxes.push(checkbox);
+        // console.log(checkboxes);
 
-        const label = document.createElement("label");
-        label.htmlFor = "myCheckbox";
-        label.textContent = "Enable sensor"; // Change the text to whatever you like
+        // const label = document.createElement("label");
+        // label.htmlFor = "myCheckbox";
+        // label.textContent = "Enable sensor"; // Change the text to whatever you like
 
         messagesDiv.appendChild(checkbox);
-        messagesDiv.appendChild(label);
+        // messagesDiv.appendChild(label);
     }
 
     // po kliknięciu checkboxa rozpocznij pomiar / po odkliknięciu zakończ
@@ -137,11 +138,20 @@ socket.on('SendInfoAboutJoining', (data) => {
 });
 
 
+// Usuń checkbox umożliwiający pomiar dla sensorów które wyszły z pokoju
+socket.on('SendInfoAboutDisconnection', (userID) => {
+    const checkbox = document.getElementById(`${userID}-checkbox`);
+    const parragraph = document.getElementById(`${userID}-parragraph`);
+    messagesDiv.removeChild(checkbox);
+    messagesDiv.removeChild(parragraph);
+}) 
+
+
 const parragraph2 = document.createElement('p');
 messagesDiv.appendChild(parragraph2);
 
 socket.on('ShowSensorData', (data) => {
-    // alert('pokaż dane');
+    
     parragraph2.innerHTML = `a = ${data.alpha}, b = ${data.beta}, g = ${data.gamma}<br>
             accX = ${data.accX}, accY = ${data.accY}, accZ = ${data.accZ}`;
 })

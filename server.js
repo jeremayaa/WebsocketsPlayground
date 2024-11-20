@@ -19,6 +19,7 @@ const PORT = 3000;
 // Obsłóż pliki statyczne
 app.use(express.static(path.join(__dirname, 'public')));
 
+let IsRoomActive = 0;
 
 class SocketHandler {
     constructor(io) {
@@ -34,12 +35,18 @@ class SocketHandler {
             socket.on('setUserID', (userID) => {
                 this.clients[userID] = socket.id;
                 console.log('User ID set for socket', socket.id, ':', userID);
+
+                // Jeśli pokój istnieje, wyświetl wyślij informację do każdego nowego użytkownika
+                if (IsRoomActive) {
+                    this.io.to(socket.id).emit('Invitation', room.name);
+                }
             });
 
             // Tworzy pokój za pomocą jego nazwy i hosta oraz wysyła zaproszenie na wszystkie urządzenia
             socket.on('CreateRoom', (data) => {
                 const {RoomName, userID} = data;
                 room = new Room(RoomName, userID);
+                IsRoomActive = 1;
                 console.log('Utworzono pokój o nazwie:', RoomName);
                 console.log(room);
 
@@ -85,7 +92,6 @@ class SocketHandler {
 
 
             socket.on('sensorData', (data) => {
-                console.log('sensorData');
                 this.io.emit('ShowSensorData', (data));
             })
 
@@ -95,6 +101,7 @@ class SocketHandler {
                 const userID = Object.keys(this.clients).find(key => this.clients[key] === socket.id);
                     if (userID) {
                         delete this.clients[userID];
+                        this.io.emit('SendInfoAboutDisconnection', (userID));
                     }
             });
         });
