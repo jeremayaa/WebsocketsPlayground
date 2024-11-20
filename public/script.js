@@ -38,7 +38,6 @@ if (!userID) {
 // Emituj event 'setUserID -> plik server.js tworzy mapę socket.id do userID. 
 // Jest to konieczne, bo socket.id zmienia się za każdym razem gdy odświerzymy stronę
 // user id jest przechowywane w pamięci urządzenia i jest zapamiętapne przy każdym nastęnym uruchomienu strony
-
 if (userID) {
     socket.emit('setUserID', userID); 
 }
@@ -72,11 +71,7 @@ if (deviceType==='computer') {
 
 }
 
-// measureButton.addEventListener('click', () => {
-const checkboxes = [];
-
 socket.on('giveSensors', (sensors) => {
-    // alert(sensors);
     console.log(sensors);
 })
 
@@ -99,9 +94,7 @@ socket.on('Invitation', (RoomName) => {
 
 });
 
-
 socket.on('SendInfoAboutJoining', (data) => {
-    
     const parragraph = document.createElement('p');
     parragraph.id = `${data.userID}-parragraph`;
     const userID = data.userID;
@@ -114,15 +107,8 @@ socket.on('SendInfoAboutJoining', (data) => {
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
         checkbox.id = `${data.userID}-checkbox`;
-        // checkboxes.push(checkbox);
-        // console.log(checkboxes);
-
-        // const label = document.createElement("label");
-        // label.htmlFor = "myCheckbox";
-        // label.textContent = "Enable sensor"; // Change the text to whatever you like
 
         messagesDiv.appendChild(checkbox);
-        // messagesDiv.appendChild(label);
     }
 
     // po kliknięciu checkboxa rozpocznij pomiar / po odkliknięciu zakończ
@@ -137,7 +123,6 @@ socket.on('SendInfoAboutJoining', (data) => {
     })
 });
 
-
 // Usuń checkbox umożliwiający pomiar dla sensorów które wyszły z pokoju
 socket.on('SendInfoAboutDisconnection', (userID) => {
     const checkbox = document.getElementById(`${userID}-checkbox`);
@@ -146,12 +131,11 @@ socket.on('SendInfoAboutDisconnection', (userID) => {
     messagesDiv.removeChild(parragraph);
 }) 
 
-
 const parragraph2 = document.createElement('p');
 messagesDiv.appendChild(parragraph2);
 
 socket.on('ShowSensorData', (data) => {
-    
+
     parragraph2.innerHTML = `a = ${data.alpha}, b = ${data.beta}, g = ${data.gamma}<br>
             accX = ${data.accX}, accY = ${data.accY}, accZ = ${data.accZ}`;
 })
