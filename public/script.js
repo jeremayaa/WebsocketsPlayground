@@ -121,7 +121,6 @@ socket.on('SendInfoAboutJoining', (data) => {
             socket.emit('StartMeasurementOnPhone', { userID });
             console.log(`Started measurement on phone for userID: ${userID}`);
 
-
         } else {
             const PlaceToShowData = document.getElementById( `${data.userID}-PlaceToShowData`);
             roomspace.removeChild(PlaceToShowData);
@@ -135,9 +134,16 @@ socket.on('SendInfoAboutDisconnection', (userID) => {
     const checkbox = document.getElementById(`${userID}-checkbox`);
     const parragraph = document.getElementById(`${userID}-parragraph`);
     const PlaceToShowData = document.getElementById(`${userID}-PlaceToShowData`);
-    messagesDiv.removeChild(checkbox);
-    messagesDiv.removeChild(parragraph);
-    roomspace.removeChild(PlaceToShowData);
+
+    if (checkbox) {
+        messagesDiv.removeChild(checkbox);
+    }
+    if (parragraph) {
+        messagesDiv.removeChild(parragraph);
+    }
+    if (PlaceToShowData) {
+        roomspace.removeChild(PlaceToShowData);
+    }
 }) 
 
 const parragraph2 = document.createElement('p');
@@ -150,6 +156,73 @@ socket.on('ShowSensorData', (data) => {
             userID = ${data.userid}`;
 })
 
+let measurements = {};
+let isMeasuring = false;
+
+// jeśli rozpoczęto pomiar dodaj nowe dane
+socket.on('ShowSensorData', (data) => {
+    if (isMeasuring) {
+        if (!measurements[data.userid]) {
+            measurements[data.userid] = [];
+        }
+        
+        measurements[data.userid].push({
+            alpha: data.alpha,
+            beta: data.beta,
+            gamma: data.gamma,
+            accX: data.accX,
+            accY: data.accY,
+            accZ: data.accZ,
+            timestamp: new Date().toISOString(),
+        });
+    }
+});
+
+measureButton.addEventListener('click', () => {
+    if (measureButton.textContent === 'rozpocznij pomiar') {
+        measureButton.textContent = 'zakończ pomiar';
+        isMeasuring = true;
+
+        measurements = {};
+    } else {
+        measureButton.textContent = 'rozpocznij pomiar';
+        isMeasuring = false;
+
+        // Po zakończeniu pomiaru zapisz dane w csv
+        for (const userid in measurements) {
+            if (measurements.hasOwnProperty(userid)) {
+                const csvContent = createCSV(measurements[userid]);
+                const date = new Date().toISOString().split('T')[0];
+                const fileName = `${userid}-${date}.csv`;
+
+                downloadCSV(csvContent, fileName);
+            }
+        }
+
+        // Wyczyść dane po zakończeniu sesji 
+        measurements = {};
+    }
+});
+
+function createCSV(dataArray) {
+    if (dataArray.length === 0) return '';
+
+    const headers = Object.keys(dataArray[0]);
+    const csvRows = [
+        headers.join(','), 
+        ...dataArray.map(row => headers.map(field => JSON.stringify(row[field])).join(',')), 
+    ];
+
+    return csvRows.join('\n');
+}
+
+function downloadCSV(content, fileName) {
+    const blob = new Blob([content], { type: 'text/csv' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = fileName;
+    link.click();
+}
 socket.on('StartCapturingSensorData', (userID) => {
     console.log('Received request to start capturing sensor data from computer');
     sensorHandler.startCapturing(userID);
