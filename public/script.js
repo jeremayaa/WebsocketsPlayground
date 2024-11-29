@@ -44,6 +44,7 @@ if (userID) {
 
 // na komputerze można wygenerować pokój
 const measureButton = document.createElement('button');
+const gameButton = document.createElement('button');
 if (deviceType==='computer') {
 
     const RoomCodeField = document.createElement('input');
@@ -63,12 +64,16 @@ if (deviceType==='computer') {
 
         // na komputerze dodaj przycisk 'rozpocznij pomiar'
         measureButton.textContent = 'rozpocznij pomiar';
+        gameButton.textContent = 'rozpocznij grę';
     
         if (deviceType==='computer') {
             roomspace.appendChild(measureButton);
+            roomspace.appendChild(gameButton);
         }
-        });
 
+        content.removeChild(CreateRoomButton);
+        content.removeChild(RoomCodeField);
+        });
 }
 
 socket.on('giveSensors', (sensors) => {
@@ -77,20 +82,23 @@ socket.on('giveSensors', (sensors) => {
 
 // Gdy zaproszenie zostanie wysłane dodaj przycisk umożliwiający na dołaczenie do pokoju
 socket.on('Invitation', (RoomName) => {
-    const RoomNameParagraph = document.createElement('p');
-    const JoinRoomButton = document.createElement('button');
-    JoinRoomButton.textContent = 'Join room';
-    RoomNameParagraph.textContent = RoomName;
-    messagesDiv.appendChild(RoomNameParagraph);
-    messagesDiv.appendChild(JoinRoomButton);
+    if (deviceType==='phone') {
 
-    // wyemituj even 'joinRoom' -> plik server.js doda userID do listy sensorów w pokoju
-    let data = {RoomName, userID};
-    JoinRoomButton.addEventListener('click', () => {
-        socket.emit('joinRoom', (data));
-        // zapobiega ponownemu dołączeniu do pokoju
-        messagesDiv.removeChild(JoinRoomButton);
-        })
+        const RoomNameParagraph = document.createElement('p');
+        const JoinRoomButton = document.createElement('button');
+        JoinRoomButton.textContent = 'Join room';
+        RoomNameParagraph.textContent = RoomName;
+        messagesDiv.appendChild(RoomNameParagraph);
+        messagesDiv.appendChild(JoinRoomButton);
+    
+        // wyemituj even 'joinRoom' -> plik server.js doda userID do listy sensorów w pokoju
+        let data = {RoomName, userID};
+        JoinRoomButton.addEventListener('click', () => {
+            socket.emit('joinRoom', (data));
+            // zapobiega ponownemu dołączeniu do pokoju
+            messagesDiv.removeChild(JoinRoomButton);
+            })
+    }
 });
 
 socket.on('SendInfoAboutJoining', (data) => {
@@ -149,15 +157,18 @@ socket.on('SendInfoAboutDisconnection', (userID) => {
 const parragraph2 = document.createElement('p');
 messagesDiv.appendChild(parragraph2);
 
-socket.on('ShowSensorData', (data) => {
-    const PlaceToShowData = document.getElementById(`${data.userid}-PlaceToShowData`);
-    PlaceToShowData.innerHTML = `a = ${data.alpha}, b = ${data.beta}, g = ${data.gamma}<br>
-            accX = ${data.accX}, accY = ${data.accY}, accZ = ${data.accZ} <br>
-            userID = ${data.userid}`;
-})
+// socket.on('ShowSensorData', (data) => {
+//     const PlaceToShowData = document.getElementById(`${data.userid}-PlaceToShowData`);
+//     PlaceToShowData.innerHTML = `a = ${data.alpha}, b = ${data.beta}, g = ${data.gamma}<br>
+//             accX = ${data.accX}, accY = ${data.accY}, accZ = ${data.accZ} <br>
+//             userID = ${data.userid}`;
+// })
+
+
 
 let measurements = {};
 let isMeasuring = false;
+
 
 // jeśli rozpoczęto pomiar dodaj nowe dane
 socket.on('ShowSensorData', (data) => {
@@ -175,8 +186,41 @@ socket.on('ShowSensorData', (data) => {
             accZ: data.accZ,
             timestamp: new Date().toISOString(),
         });
+
+        const PlaceToShowData = document.getElementById(`${data.userid}-PlaceToShowData`);
+        PlaceToShowData.innerHTML = `a = ${data.alpha}, b = ${data.beta}, g = ${data.gamma}<br>
+                accX = ${data.accX}, accY = ${data.accY}, accZ = ${data.accZ} <br>
+                userID = ${data.userid}`;
+    }
+
+    if (isPlaying) {
+        // width of div with id 'platform' = data.alpha
+        // height of div with id 'platform' = data.beta
+        const platform = document.getElementById('platform');
+
+        platform.style.width = `${data.alpha}px`; // Set width dynamically
+        platform.style.height = `${data.beta}px`; // Set height dynamically
     }
 });
+
+let isPlaying = false;
+
+gameButton.addEventListener('click', () => {
+    if (gameButton.textContent === 'rozpocznij grę') {
+        gameButton.textContent = 'zakończ grę';
+        isPlaying = true;
+
+        let platform = document.createElement('div');
+        platform.id = 'platform';
+        roomspace.appendChild(platform);
+
+
+    } else {
+        gameButton.textContent = 'rozpocznij grę';
+        isPlaying = false;
+        roomspace.removeChild(platform);
+    }
+})
 
 measureButton.addEventListener('click', () => {
     if (measureButton.textContent === 'rozpocznij pomiar') {

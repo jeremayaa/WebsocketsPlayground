@@ -1,0 +1,44 @@
+body { 
+    font-family: Helvetica, Arial; 
+    background-color: beige;
+}
+
+.container {
+    display: flex;
+    flex-direction: row;
+}
+
+#messages { 
+    margin-bottom: 20px; 
+    height: 200px;
+    background-color: magenta;
+    flex: 1;
+}
+
+#content { 
+    margin-bottom: 20px; 
+    background-color: rgb(0, 255, 68);
+}
+
+#roomspace { 
+    margin-bottom: 20px; 
+    background-color: rgb(21, 0, 255);
+    height: 200px;
+    flex: 4;
+}
+
+input { 
+    width: 300px; 
+    padding: 10px; 
+}
+
+button { 
+    padding: 10px 20px; 
+}
+
+
+#platform {
+    height: 100px;
+    width: 100px;
+    background-color: aqua;
+}
