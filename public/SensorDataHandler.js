@@ -8,6 +8,7 @@ export class SensorDataHandler {
         this.accY = 0;
         this.accZ = 0;
         this.interval = null;
+        this.baseTimestamp = null;
 
         this.initializeListeners();
 
@@ -22,15 +23,15 @@ export class SensorDataHandler {
     }
 
     initializeListeners() {
-        this.socket.on('StartCapturingSensorData', (userID) => {
-            this.startCapturing(userID);
+        this.socket.on('StartCapturingSensorData', (data) => {
+            this.startCapturing(data);
         });
 
         this.socket.on('StopCapturingSensorData', () => {
             this.stopCapturing();
         });
     }
-    
+
     initializePhoneSensors() {
         console.log('initialise phone sensors');
         if (window.DeviceOrientationEvent) {
@@ -51,10 +52,10 @@ export class SensorDataHandler {
             });
         }
     }
-
-    startCapturing(userID) {
+    
+    startCapturing(data) {
         if (this.deviceType === 'phone') {
-            this.interval = setInterval(() => this.sendData(userID), 33.33); // 30 times per second
+            this.interval = setInterval(() => this.sendData(data.userID), data.delay); // 30 times per second
         }
     }
     
@@ -63,6 +64,9 @@ export class SensorDataHandler {
     }
     
     sendData(userID) {
+        const currentTime = performance.now(); // High-resolution timestamp
+        const elapsedTime = (currentTime - this.baseTimestamp).toFixed(0); // Time since start
+
         this.socket.emit('sensorData', {
             alpha: this.alpha,
             beta: this.beta,
@@ -70,6 +74,7 @@ export class SensorDataHandler {
             accX: this.accX,
             accY: this.accY,
             accZ: this.accZ,
+            timestamp: parseFloat(elapsedTime),
             userid: userID
         });
     }

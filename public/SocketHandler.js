@@ -12,18 +12,16 @@ class SocketHandler {
                 this.clients[userID] = socket.id;
                 console.log('User ID set for socket', socket.id, ':', userID);
     
-                // const { userID } = data;
-                const data = { userID}
-                this.io.emit('SendInfoAboutJoining', data);
+                this.io.emit('SendInfoAboutJoining', userID);
             });
 
             socket.on('StartMeasurementOnPhone', (data) => {
-                const { userID } = data;
+                const { userID, delay } = data;
                 const phoneSocketId = this.clients[userID];
 
                 if (phoneSocketId) {
                     console.log(`Requesting phone (${userID}) to start capturing sensor data`);
-                    this.io.to(phoneSocketId).emit('StartCapturingSensorData', (userID));
+                    this.io.to(phoneSocketId).emit('StartCapturingSensorData', data);
                 } else {
                     console.log(`Phone with userID ${userID} is not connected`);
                 }
@@ -37,7 +35,7 @@ class SocketHandler {
             });
 
             socket.on('sensorData', (data) => {
-                this.io.emit('ShowSensorData', data);
+                this.io.emit('sensorData', data);
             });
 
             socket.on('disconnect', () => {
