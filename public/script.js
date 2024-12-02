@@ -42,64 +42,19 @@ if (userID) {
     socket.emit('setUserID', userID); 
 }
 
-// na komputerze można wygenerować pokój
+// Na komputerze dodaj przycisk do rozpoczęcia pomiaru oraz gry
 const measureButton = document.createElement('button');
 const gameButton = document.createElement('button');
+
 if (deviceType==='computer') {
+    // na komputerze dodaj przycisk 'rozpocznij pomiar'
+    measureButton.textContent = 'rozpocznij pomiar';
+    gameButton.textContent = 'rozpocznij grę';
 
-    const RoomCodeField = document.createElement('input');
-    RoomCodeField.type = 'text';
-    RoomCodeField.placeholder = 'Enter room code';
-    const CreateRoomButton = document.createElement('button');
-    CreateRoomButton.textContent = 'Create room';
-
-    content.appendChild(RoomCodeField);
-    content.appendChild(CreateRoomButton);
-
-    // Po kliknięciu przysicku wyemituj CreateRoom -> plik server.js wyśle zaproszenia do wszystkich użytkowników
-    CreateRoomButton.addEventListener('click', () => {
-        const RoomName = RoomCodeField.value;
-        let data = {RoomName, userID}
-        socket.emit('CreateRoom', (data));
-
-        // na komputerze dodaj przycisk 'rozpocznij pomiar'
-        measureButton.textContent = 'rozpocznij pomiar';
-        gameButton.textContent = 'rozpocznij grę';
-    
-        if (deviceType==='computer') {
-            roomspace.appendChild(measureButton);
-            roomspace.appendChild(gameButton);
-        }
-
-        content.removeChild(CreateRoomButton);
-        content.removeChild(RoomCodeField);
-        });
+    roomspace.appendChild(measureButton);
+    roomspace.appendChild(gameButton);
 }
 
-socket.on('giveSensors', (sensors) => {
-    console.log(sensors);
-})
-
-// Gdy zaproszenie zostanie wysłane dodaj przycisk umożliwiający na dołaczenie do pokoju
-socket.on('Invitation', (RoomName) => {
-    if (deviceType==='phone') {
-
-        const RoomNameParagraph = document.createElement('p');
-        const JoinRoomButton = document.createElement('button');
-        JoinRoomButton.textContent = 'Join room';
-        RoomNameParagraph.textContent = RoomName;
-        messagesDiv.appendChild(RoomNameParagraph);
-        messagesDiv.appendChild(JoinRoomButton);
-    
-        // wyemituj even 'joinRoom' -> plik server.js doda userID do listy sensorów w pokoju
-        let data = {RoomName, userID};
-        JoinRoomButton.addEventListener('click', () => {
-            socket.emit('joinRoom', (data));
-            // zapobiega ponownemu dołączeniu do pokoju
-            messagesDiv.removeChild(JoinRoomButton);
-            })
-    }
-});
 
 socket.on('SendInfoAboutJoining', (data) => {
     const parragraph = document.createElement('p');
@@ -120,6 +75,7 @@ socket.on('SendInfoAboutJoining', (data) => {
 
     // po kliknięciu checkboxa rozpocznij pomiar / po odkliknięciu zakończ
     const checkbox = document.getElementById(`${data.userID}-checkbox`);
+
     checkbox.addEventListener('click', () => {
         if (checkbox.checked) {
             const PlaceToShowData = document.createElement('p');
@@ -136,6 +92,17 @@ socket.on('SendInfoAboutJoining', (data) => {
         }
     })
 });
+
+
+// enkapsulowałem to do klasy sensorDataHandler
+// socket.on('StartCapturingSensorData', (userID) => {
+//     console.log('Received request to start capturing sensor data from computer');
+//     sensorHandler.startCapturing(userID);
+// });
+
+// socket.on('StopCapturingSensorData', () => {
+//     sensorHandler.stopCapturing();
+// })
 
 // Usuń checkbox umożliwiający pomiar dla sensorów które wyszły z pokoju
 socket.on('SendInfoAboutDisconnection', (userID) => {
@@ -154,21 +121,9 @@ socket.on('SendInfoAboutDisconnection', (userID) => {
     }
 }) 
 
-const parragraph2 = document.createElement('p');
-messagesDiv.appendChild(parragraph2);
-
-// socket.on('ShowSensorData', (data) => {
-//     const PlaceToShowData = document.getElementById(`${data.userid}-PlaceToShowData`);
-//     PlaceToShowData.innerHTML = `a = ${data.alpha}, b = ${data.beta}, g = ${data.gamma}<br>
-//             accX = ${data.accX}, accY = ${data.accY}, accZ = ${data.accZ} <br>
-//             userID = ${data.userid}`;
-// })
-
-
 
 let measurements = {};
 let isMeasuring = false;
-
 
 // jeśli rozpoczęto pomiar dodaj nowe dane
 socket.on('ShowSensorData', (data) => {
@@ -267,11 +222,3 @@ function downloadCSV(content, fileName) {
     link.download = fileName;
     link.click();
 }
-socket.on('StartCapturingSensorData', (userID) => {
-    console.log('Received request to start capturing sensor data from computer');
-    sensorHandler.startCapturing(userID);
-});
-
-socket.on('StopCapturingSensorData', () => {
-    sensorHandler.stopCapturing();
-})

@@ -8,15 +8,29 @@ export class SensorDataHandler {
         this.accY = 0;
         this.accZ = 0;
         this.interval = null;
+
+        this.initializeListeners();
+
         // this.deviceType = window.innerWidth > 600 ? 'computer' : 'phone';
         const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
         this.deviceType = isMobile ? 'phone' : 'computer';
-        console.log('Device Type Detected:', this.deviceType);
+
+        // console.log('Device Type Detected:', this.deviceType);
         if (this.deviceType === 'phone') {
             this.initializePhoneSensors();
         }
     }
 
+    initializeListeners() {
+        this.socket.on('StartCapturingSensorData', (userID) => {
+            this.startCapturing(userID);
+        });
+
+        this.socket.on('StopCapturingSensorData', () => {
+            this.stopCapturing();
+        });
+    }
+    
     initializePhoneSensors() {
         console.log('initialise phone sensors');
         if (window.DeviceOrientationEvent) {
@@ -60,3 +74,4 @@ export class SensorDataHandler {
         });
     }
 }
+
