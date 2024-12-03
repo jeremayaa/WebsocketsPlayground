@@ -1,5 +1,6 @@
 import { SensorDataHandler } from './SensorDataHandler.js';
 
+
 const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 const deviceType = isMobile ? 'phone' : 'computer';
 console.log(deviceType);
@@ -82,7 +83,7 @@ socket.on('SendInfoAboutJoining', (userID) => {
             PlaceToShowData.id = `${userID}-PlaceToShowData`;
             PlaceToShowData.textContent = `Place To show data ${userID}`;
             roomspace.appendChild(PlaceToShowData);
-            let delay = 25;
+            let delay = 250;
             socket.emit('StartMeasurementOnPhone', { userID, delay });
             console.log(`Started measurement on phone for userID: ${userID}`);
 

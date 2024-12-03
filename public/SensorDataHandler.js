@@ -7,6 +7,9 @@ export class SensorDataHandler {
         this.accX = 0;
         this.accY = 0;
         this.accZ = 0;
+        this.magX = 0;
+        this.magY = 0;
+        this.magZ = 0;
         this.interval = null;
         this.baseTimestamp = null;
 
@@ -18,7 +21,7 @@ export class SensorDataHandler {
 
         // console.log('Device Type Detected:', this.deviceType);
         if (this.deviceType === 'phone') {
-            this.initializePhoneSensors();
+            this.initializeRawSensors();
         }
     }
 
@@ -52,7 +55,55 @@ export class SensorDataHandler {
             });
         }
     }
+
+    initializeRawSensors() {
+        if ('Gyroscope' in window) {
+            const gyroscopeSensor = new Gyroscope({ frequency: 60 });
+            gyroscopeSensor.addEventListener('reading', () => {
+                this.alpha = parseFloat(gyroscopeSensor.x.toFixed(2));
+                this.beta = parseFloat(gyroscopeSensor.y.toFixed(2));
+                this.gamma = parseFloat(gyroscopeSensor.z.toFixed(2));
+            });
+            gyroscopeSensor.addEventListener('error', (event) => {
+                console.error('Gyroscope Sensor Error:', event.error);
+            });
+            gyroscopeSensor.start();
+        } else {
+            this.socket.emit('GyroscopeError');
+        }
+
+        if ('Accelerometer' in window) {
+            const accelerometerSensor = new Accelerometer({ frequency: 60 });
+            accelerometerSensor.addEventListener('reading', () => {
+                this.alpha = parseFloat(accelerometerSensor.x.toFixed(2));
+                this.beta = parseFloat(accelerometerSensor.y.toFixed(2));
+                this.gamma = parseFloat(accelerometerSensor.z.toFixed(2));
+            });
+            accelerometerSensor.addEventListener('error', (event) => {
+                console.error('Accelerometer Sensor Error:', event.error);
+            });
+            accelerometerSensor.start();
+        } else {
+            this.socket.emit('AccelerometerError');
+        }
     
+        // Check for Magnetometer support
+        if ('Magnetometer' in window) {
+            const magnetometerSensor = new Magnetometer({ frequency: 60 });
+            magnetometerSensor.addEventListener('reading', () => {
+                this.accX = parseFloat(magnetometerSensor.x.toFixed(2));
+                this.accY = parseFloat(magnetometerSensor.y.toFixed(2));
+                this.accZ = parseFloat(magnetometerSensor.z.toFixed(2));
+            });
+            magnetometerSensor.addEventListener('error', (event) => {
+                console.error('Magnetometer Sensor Error:', event.error);
+            });
+            magnetometerSensor.start();
+        } else {
+            this.socket.emit('MagetometerError');
+        }
+    }
+
     startCapturing(data) {
         if (this.deviceType === 'phone') {
             this.interval = setInterval(() => this.sendData(data.userID), data.delay); // 30 times per second

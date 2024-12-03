@@ -38,6 +38,16 @@ class SocketHandler {
                 this.io.emit('sensorData', data);
             });
 
+            socket.on('MagetometerError', () => {
+                console.log('MagetometerError');
+            });
+
+            
+            socket.on('GyroscopeError', () => {
+                console.log('GyroscopeError');
+            });
+
+
             socket.on('disconnect', () => {
                 console.log('Client disconnected:', socket.id);
                 const userID = Object.keys(this.clients).find(key => this.clients[key] === socket.id);

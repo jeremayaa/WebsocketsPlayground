@@ -18,6 +18,12 @@ const server = https.createServer(options, app);
 const io = socketIo(server);
 const PORT = 3000;
 
+// res.setHeader('Permissions-Policy', 'magnetometer=*');
+app.use((req, res, next) => {
+    res.setHeader('Permissions-Policy', 'magnetometer=*'); // Adjust policy based on your needs
+    next();
+});
+
 // Obsłóż pliki statyczne
 app.use(express.static(path.join(__dirname, 'public')));
 
