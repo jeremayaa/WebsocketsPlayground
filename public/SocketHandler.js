@@ -12,7 +12,9 @@ class SocketHandler {
                 this.clients[userID] = socket.id;
                 console.log('User ID set for socket', socket.id, ':', userID);
     
-                this.io.emit('SendInfoAboutJoining', userID);
+                this.io.to(socket.id).emit('getAvailableSensors', userID);
+                // this.io.emit('SendInfoAboutJoining', userID);
+
             });
 
             socket.on('StartMeasurementOnPhone', (data) => {
@@ -41,6 +43,19 @@ class SocketHandler {
             socket.on('MagetometerError', () => {
                 console.log('MagetometerError');
             });
+
+            socket.on('AvailableSensors', ({AvailableSensors, userID}) => {
+
+                console.log(`availbleSensors for ${userID}}:
+                        Accelerometer: ${AvailableSensors['Accelerometer']},
+                        Gyroscope: ${AvailableSensors['Gyroscope']},
+                        Magnetometer: ${AvailableSensors['Magnetometer']},
+                        OrientationEvent: ${AvailableSensors['OrientationEvent']},
+                        MotionEvent: ${AvailableSensors['MotionEvent']}
+                    
+                        `);
+                this.io.emit('AvailableSensors', { AvailableSensors, userID });
+            })
 
             
             socket.on('GyroscopeError', () => {

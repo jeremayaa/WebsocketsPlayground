@@ -43,6 +43,10 @@ if (userID) {
     socket.emit('setUserID', userID); 
 }
 
+// socket.on('AvailableSensors', ({AvailableSensors, userID}) => {
+
+// })
+
 // Na komputerze dodaj przycisk do rozpoczęcia pomiaru oraz gry
 const measureButton = document.createElement('button');
 const saveCSVButton = document.createElement('button');
@@ -57,14 +61,21 @@ if (deviceType==='computer') {
     roomspace.appendChild(gameButton);
 }
 
-socket.on('SendInfoAboutJoining', (userID) => {
+
+
+socket.on('AvailableSensors', ({AvailableSensors, userID}) => {
     const parragraph = document.createElement('p');
     parragraph.id = `${userID}-parragraph`;
     
-    
     // na komputerze wyświetl checkbox umożliwiający rozpoczęcia pomiaru na tym sensorze
     if (deviceType==='computer') {
-        parragraph.textContent = `Enable sensor: ${userID}`;
+
+        parragraph.textContent = `Enable sensor: ${userID}
+        Available sensors are: Accelerometer: ${AvailableSensors['Accelerometer']},
+                        Gyroscope: ${AvailableSensors['Gyroscope']},
+                        Magnetometer: ${AvailableSensors['Magnetometer']},
+                        OrientationEvent: ${AvailableSensors['OrientationEvent']},
+                        MotionEvent: ${AvailableSensors['MotionEvent']}`;
         messagesDiv.appendChild(parragraph);
         
         const EnableSensorCheckbox = document.createElement('input');
@@ -76,6 +87,7 @@ socket.on('SendInfoAboutJoining', (userID) => {
 
     // po kliknięciu checkboxa rozpocznij pomiar / po odkliknięciu zakończ
     const EnableSensorCheckbox = document.getElementById(`${userID}-checkbox`);
+    
 
     EnableSensorCheckbox.addEventListener('click', () => {
         if (EnableSensorCheckbox.checked) {

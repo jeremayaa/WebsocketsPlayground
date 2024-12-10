@@ -25,7 +25,41 @@ export class SensorDataHandler {
         }
     }
 
+    getAvailableSensors(userID) {
+        let AvailableSensors = {
+            'Accelerometer': 0,
+            'Gyroscope': 0,
+            'Magnetometer': 0,
+            'OrientationEvent': 0,
+            'MotionEvent': 0
+        }
+
+        if ('Accelerometer' in window) {
+            AvailableSensors['Accelerometer'] = 1;
+        }
+        if ('Gyroscope' in window) {
+            AvailableSensors['Gyroscope'] = 1;
+        }
+        if ('Magnetometer' in window) {
+            AvailableSensors['Magnetometer'] = 1;
+        }
+        if (window.DeviceOrientationEvent) {
+            AvailableSensors['OrientationEvent'] = 1;
+        }
+        if (window.DeviceMotionEvent) {
+            AvailableSensors['MotionEvent'] = 1;
+        }
+
+        this.socket.emit('AvailableSensors', { AvailableSensors, userID });
+        // return AvailableSensors
+    }
+
+
     initializeListeners() {
+        this.socket.on('getAvailableSensors', (userID) => {
+            this.getAvailableSensors(userID);
+        })  
+
         this.socket.on('StartCapturingSensorData', (data) => {
             this.startCapturing(data);
         });
