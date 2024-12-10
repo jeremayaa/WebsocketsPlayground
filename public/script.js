@@ -61,8 +61,6 @@ if (deviceType==='computer') {
     roomspace.appendChild(gameButton);
 }
 
-
-
 socket.on('AvailableSensors', ({AvailableSensors, userID}) => {
     const parragraph = document.createElement('p');
     parragraph.id = `${userID}-parragraph`;
@@ -76,6 +74,7 @@ socket.on('AvailableSensors', ({AvailableSensors, userID}) => {
                         Magnetometer: ${AvailableSensors['Magnetometer']},
                         OrientationEvent: ${AvailableSensors['OrientationEvent']},
                         MotionEvent: ${AvailableSensors['MotionEvent']}`;
+
         messagesDiv.appendChild(parragraph);
         
         const EnableSensorCheckbox = document.createElement('input');
@@ -87,7 +86,6 @@ socket.on('AvailableSensors', ({AvailableSensors, userID}) => {
 
     // po kliknięciu checkboxa rozpocznij pomiar / po odkliknięciu zakończ
     const EnableSensorCheckbox = document.getElementById(`${userID}-checkbox`);
-    
 
     EnableSensorCheckbox.addEventListener('click', () => {
         if (EnableSensorCheckbox.checked) {
@@ -192,8 +190,11 @@ socket.on('sensorData', (data) => {
         });
 
         const PlaceToShowData = document.getElementById(`${data.userid}-PlaceToShowData`);
-        PlaceToShowData.innerHTML = `a = ${data.alpha}, b = ${data.beta}, g = ${data.gamma}<br>
-                accX = ${data.accX}, accY = ${data.accY}, accZ = ${data.accZ} <br>
+        PlaceToShowData.innerHTML = `ax = ${data.ax}, ay = ${data.ay}, az = ${data.az}<br>
+                gx = ${data.gx}, gy = ${data.gy}, gz = ${data.gz} <br>
+                mx = ${data.mx}, my = ${data.my}, mz = ${data.mz} <br>
+                dmx = ${data.dmx}, dmy = ${data.dmy}, dmz = ${data.dmz} <br>
+                dox = ${data.dox}, doy = ${data.doy}, mz = ${data.doz} <br>
                 userID = ${data.userid}`;
     }
 

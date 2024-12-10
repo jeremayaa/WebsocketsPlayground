@@ -27,7 +27,6 @@ app.use((req, res, next) => {
 // Obsłóż pliki statyczne
 app.use(express.static(path.join(__dirname, 'public')));
 
-
 // Inicjalizuj socket handler
 const socketHandler = new SocketHandler(io);
 socketHandler.handleConnections();

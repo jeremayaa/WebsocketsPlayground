@@ -18,11 +18,20 @@ class SocketHandler {
             });
 
             socket.on('StartMeasurementOnPhone', (data) => {
+
                 const { userID, delay } = data;
                 const phoneSocketId = this.clients[userID];
 
                 if (phoneSocketId) {
                     console.log(`Requesting phone (${userID}) to start capturing sensor data`);
+                    let WhichSensors = {'Accelerometer': 1,
+                        // 'Gyroscope': 1,
+                        // 'Magnetometer': 1,
+                        'DeviceMotion': 1,
+                        'DeviceOrientation': 1
+                    };
+
+                    this.io.to(phoneSocketId).emit('initializeSensors', WhichSensors);
                     this.io.to(phoneSocketId).emit('StartCapturingSensorData', data);
                 } else {
                     console.log(`Phone with userID ${userID} is not connected`);
@@ -57,7 +66,6 @@ class SocketHandler {
                 this.io.emit('AvailableSensors', { AvailableSensors, userID });
             })
 
-            
             socket.on('GyroscopeError', () => {
                 console.log('GyroscopeError');
             });
