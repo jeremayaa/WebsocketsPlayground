@@ -8,28 +8,24 @@ class SocketHandler {
         this.io.on('connection', (socket) => {
             console.log('New client connected:', socket.id);
 
-            socket.on('setUserID', (userID) => {
+            socket.on('setUserID', ({userID, isMobile}) => {
+                
                 this.clients[userID] = socket.id;
                 console.log('User ID set for socket', socket.id, ':', userID);
-    
-                this.io.to(socket.id).emit('getAvailableSensors', userID);
+                if (isMobile) {
+                    this.io.to(socket.id).emit('getAvailableSensors', userID);
+                }
                 // this.io.emit('SendInfoAboutJoining', userID);
-
+                 
             });
 
             socket.on('StartMeasurementOnPhone', (data) => {
 
-                const { userID, delay } = data;
+                const { userID, delay, WhichSensors } = data;
                 const phoneSocketId = this.clients[userID];
 
                 if (phoneSocketId) {
                     console.log(`Requesting phone (${userID}) to start capturing sensor data`);
-                    let WhichSensors = {'Accelerometer': 1,
-                        // 'Gyroscope': 1,
-                        // 'Magnetometer': 1,
-                        'DeviceMotion': 1,
-                        'DeviceOrientation': 1
-                    };
 
                     this.io.to(phoneSocketId).emit('initializeSensors', WhichSensors);
                     this.io.to(phoneSocketId).emit('StartCapturingSensorData', data);
@@ -61,7 +57,7 @@ class SocketHandler {
                         Magnetometer: ${AvailableSensors['Magnetometer']},
                         OrientationEvent: ${AvailableSensors['OrientationEvent']},
                         MotionEvent: ${AvailableSensors['MotionEvent']}
-                    
+
                         `);
                 this.io.emit('AvailableSensors', { AvailableSensors, userID });
             })

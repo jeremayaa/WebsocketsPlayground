@@ -19,6 +19,7 @@ const sensorHandler = new SensorDataHandler(socket);
 
 let userID = localStorage.getItem('userID');
 
+
 // jeśli nie ustawiono username, zapisz utwórz go i zapisz w localstorage.
 if (!userID) {
     const UserNameField = document.createElement('input');
@@ -40,12 +41,8 @@ if (!userID) {
 // Jest to konieczne, bo socket.id zmienia się za każdym razem gdy odświerzymy stronę
 // user id jest przechowywane w pamięci urządzenia i jest zapamiętapne przy każdym nastęnym uruchomienu strony
 if (userID) {
-    socket.emit('setUserID', userID); 
+    socket.emit('setUserID', { userID, isMobile } ); 
 }
-
-// socket.on('AvailableSensors', ({AvailableSensors, userID}) => {
-
-// })
 
 // Na komputerze dodaj przycisk do rozpoczęcia pomiaru oraz gry
 const measureButton = document.createElement('button');
@@ -61,21 +58,25 @@ if (deviceType==='computer') {
     roomspace.appendChild(gameButton);
 }
 
+let sensors = [];
+
 socket.on('AvailableSensors', ({AvailableSensors, userID}) => {
-    const parragraph = document.createElement('p');
-    parragraph.id = `${userID}-parragraph`;
+
+    const LeftPanelSensorInfo = document.createElement('p');
+    LeftPanelSensorInfo.id = `${userID}-LeftPanelSensorInfo`;
     
-    // na komputerze wyświetl checkbox umożliwiający rozpoczęcia pomiaru na tym sensorze
+    // na komputerze wyświetl informacje o dostępnym urządzeniu wraz z jego sensorami oraz 
+    // checkbox który umożliwia dodanie sensoru
     if (deviceType==='computer') {
 
-        parragraph.textContent = `Enable sensor: ${userID}
+        LeftPanelSensorInfo.textContent = `Enable sensor: ${userID}
         Available sensors are: Accelerometer: ${AvailableSensors['Accelerometer']},
                         Gyroscope: ${AvailableSensors['Gyroscope']},
                         Magnetometer: ${AvailableSensors['Magnetometer']},
                         OrientationEvent: ${AvailableSensors['OrientationEvent']},
                         MotionEvent: ${AvailableSensors['MotionEvent']}`;
 
-        messagesDiv.appendChild(parragraph);
+        messagesDiv.appendChild(LeftPanelSensorInfo);
         
         const EnableSensorCheckbox = document.createElement('input');
         EnableSensorCheckbox.type = 'checkbox';
@@ -89,17 +90,30 @@ socket.on('AvailableSensors', ({AvailableSensors, userID}) => {
 
     EnableSensorCheckbox.addEventListener('click', () => {
         if (EnableSensorCheckbox.checked) {
+            
             const PlaceToShowData = document.createElement('p');
             PlaceToShowData.id = `${userID}-PlaceToShowData`;
-            PlaceToShowData.textContent = `Place To show data ${userID}`;
+            PlaceToShowData.textContent = `Zaakceptowane sensory ${userID}`;
+
             roomspace.appendChild(PlaceToShowData);
-            let delay = 250;
-            socket.emit('StartMeasurementOnPhone', { userID, delay });
+            sensors.push(userID);
+
+            let delay = 50;
+
+            let WhichSensors = {'Accelerometer': 1,
+                'Gyroscope': 1,
+                'Magnetometer': 1,
+                'DeviceMotion': 1,
+                'DeviceOrientation': 1
+            };
+
+            socket.emit('StartMeasurementOnPhone', { userID, delay, WhichSensors });
             console.log(`Started measurement on phone for userID: ${userID}`);
 
         } else {
             const PlaceToShowData = document.getElementById( `${userID}-PlaceToShowData`);
             roomspace.removeChild(PlaceToShowData);
+            sensors = sensors.filter(id => id !== userID);
             socket.emit('StopMeasurementOnPhone', { userID });
         }
     })
@@ -108,14 +122,14 @@ socket.on('AvailableSensors', ({AvailableSensors, userID}) => {
 // Usuń checkbox umożliwiający pomiar dla sensorów które wyszły z pokoju
 socket.on('SendInfoAboutDisconnection', (userID) => {
     const checkbox = document.getElementById(`${userID}-checkbox`);
-    const parragraph = document.getElementById(`${userID}-parragraph`);
+    const LeftPanelSensorInfo = document.getElementById(`${userID}-LeftPanelSensorInfo`);
     const PlaceToShowData = document.getElementById(`${userID}-PlaceToShowData`);
 
     if (checkbox) {
         messagesDiv.removeChild(checkbox);
     }
-    if (parragraph) {
-        messagesDiv.removeChild(parragraph);
+    if (LeftPanelSensorInfo) {
+        messagesDiv.removeChild(LeftPanelSensorInfo);
     }
     if (PlaceToShowData) {
         roomspace.removeChild(PlaceToShowData);
@@ -149,6 +163,7 @@ measureButton.addEventListener('click', () => {
         measureButton.textContent = 'zakończ pomiar';
         isMeasuring = true;
 
+        
         measurements = {};
     } else {
         measureButton.textContent = 'rozpocznij pomiar';
@@ -180,12 +195,23 @@ socket.on('sensorData', (data) => {
         }
         
         measurements[data.userid].push({
-            alpha: data.alpha,
-            beta: data.beta,
-            gamma: data.gamma,
-            accX: data.accX,
-            accY: data.accY,
-            accZ: data.accZ,
+
+            ax: data.ax,
+            ay: data.ay,
+            az: data.az,
+            gx: data.gx,
+            gy: data.gy,
+            gz: data.gz,
+            mx: data.mx,
+            my: data.my,
+            mz: data.mz,
+            dmx: data.dmx,
+            dmy: data.dmy,
+            dmz: data.dmz,
+            dox: data.dox,
+            doy: data.doy,
+            doz: data.doz,
+
             timestamp: data.timestamp
         });
 
@@ -203,8 +229,8 @@ socket.on('sensorData', (data) => {
         // height of div with id 'platform' = data.beta
         const platform = document.getElementById('platform');
 
-        platform.style.width = `${data.alpha}px`; // Set width dynamically
-        platform.style.height = `${data.beta}px`; // Set height dynamically
+        platform.style.width = `${data.dox}px`; // Set width dynamically
+        platform.style.height = `${data.doy}px`; // Set height dynamically
     }
 });
 
