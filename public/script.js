@@ -62,67 +62,54 @@ let sensors = [];
 
 socket.on('AvailableSensors', ({AvailableSensors, userID}) => {
 
-    const LeftPanelSensorInfo = document.createElement('p');
-    LeftPanelSensorInfo.id = `${userID}-LeftPanelSensorInfo`;
+    const LeftPanelDeviceInfo = document.createElement('p');
+    LeftPanelDeviceInfo.id = `${userID}-LeftPanelDeviceInfo`;
     
     // na komputerze wyświetl informacje o dostępnym urządzeniu wraz z jego sensorami oraz 
     // checkbox który umożliwia dodanie sensoru
     if (deviceType==='computer') {
 
-        LeftPanelSensorInfo.textContent = `Enable sensor: ${userID}
+        LeftPanelDeviceInfo.textContent = `Enable sensor: ${userID}
         Available sensors are: Accelerometer: ${AvailableSensors['Accelerometer']},
                         Gyroscope: ${AvailableSensors['Gyroscope']},
                         Magnetometer: ${AvailableSensors['Magnetometer']},
                         OrientationEvent: ${AvailableSensors['OrientationEvent']},
                         MotionEvent: ${AvailableSensors['MotionEvent']}`;
 
-        messagesDiv.appendChild(LeftPanelSensorInfo);
+        messagesDiv.appendChild(LeftPanelDeviceInfo);
         
-        const EnableSensorCheckbox = document.createElement('input');
-        EnableSensorCheckbox.type = 'checkbox';
-        EnableSensorCheckbox.id = `${userID}-checkbox`;
+        const EnableDeviceCheckbox = document.createElement('input');
+        EnableDeviceCheckbox.type = 'checkbox';
+        EnableDeviceCheckbox.id = `${userID}-checkbox`;
 
-        messagesDiv.appendChild(EnableSensorCheckbox);
+        messagesDiv.appendChild(EnableDeviceCheckbox);
     }
 
     // po kliknięciu checkboxa rozpocznij pomiar / po odkliknięciu zakończ
-    const EnableSensorCheckbox = document.getElementById(`${userID}-checkbox`);
+    const EnableDeviceCheckbox = document.getElementById(`${userID}-checkbox`);
 
-    EnableSensorCheckbox.addEventListener('click', () => {
-        if (EnableSensorCheckbox.checked) {
-            
+    EnableDeviceCheckbox.addEventListener('click', () => {
+        if (EnableDeviceCheckbox.checked) {
             const PlaceToShowData = document.createElement('p');
             PlaceToShowData.id = `${userID}-PlaceToShowData`;
-            PlaceToShowData.textContent = `Zaakceptowane sensory ${userID}`;
-
+            PlaceToShowData.textContent = `Device enabled for user ${userID}`;
             roomspace.appendChild(PlaceToShowData);
             sensors.push(userID);
-
-            let delay = 50;
-
-            let WhichSensors = {'Accelerometer': 1,
-                'Gyroscope': 1,
-                'Magnetometer': 1,
-                'DeviceMotion': 1,
-                'DeviceOrientation': 1
-            };
-
-            socket.emit('StartMeasurementOnPhone', { userID, delay, WhichSensors });
-            console.log(`Started measurement on phone for userID: ${userID}`);
-
+            console.log(`Device enabled for userID: ${userID}`);
         } else {
-            const PlaceToShowData = document.getElementById( `${userID}-PlaceToShowData`);
+            const PlaceToShowData = document.getElementById(`${userID}-PlaceToShowData`);
             roomspace.removeChild(PlaceToShowData);
             sensors = sensors.filter(id => id !== userID);
-            socket.emit('StopMeasurementOnPhone', { userID });
+            console.log(`Device disabled for userID: ${userID}`);
         }
-    })
+    });
+    
 });
 
 // Usuń checkbox umożliwiający pomiar dla sensorów które wyszły z pokoju
 socket.on('SendInfoAboutDisconnection', (userID) => {
     const checkbox = document.getElementById(`${userID}-checkbox`);
-    const LeftPanelSensorInfo = document.getElementById(`${userID}-LeftPanelSensorInfo`);
+    const LeftPanelSensorInfo = document.getElementById(`${userID}-LeftPanelDeviceInfo`);
     const PlaceToShowData = document.getElementById(`${userID}-PlaceToShowData`);
 
     if (checkbox) {
@@ -147,13 +134,33 @@ gameButton.addEventListener('click', () => {
         platform.id = 'platform';
         roomspace.appendChild(platform);
 
+        let delay = 50;
+        let WhichSensors = {
+            'Accelerometer': 1,
+            'Gyroscope': 1,
+            'Magnetometer': 0,
+            'DeviceMotion': 1,
+            'DeviceOrientation': 1
+        };
+
+        sensors.forEach((id) => {
+            socket.emit('StartMeasurementOnPhone', { userID: id, delay, WhichSensors });
+            console.log(`Started game measurement on phone for userID: ${id}`);
+        });
 
     } else {
         gameButton.textContent = 'rozpocznij grę';
         isPlaying = false;
-        roomspace.removeChild(platform);
+
+        sensors.forEach((id) => {
+            socket.emit('StopMeasurementOnPhone', { userID: id });
+            console.log(`Stopped game measurement on phone for userID: ${id}`);
+        });
+
+        const platform = document.getElementById('platform');
+        if (platform) roomspace.removeChild(platform);
     }
-})
+});
 
 let measurements = {};
 let isMeasuring = false;
@@ -163,13 +170,30 @@ measureButton.addEventListener('click', () => {
         measureButton.textContent = 'zakończ pomiar';
         isMeasuring = true;
 
-        
+        let delay = 100;
+        let WhichSensors = {
+            'Accelerometer': 1,
+            'Gyroscope': 1,
+            'Magnetometer': 1,
+            'DeviceMotion': 1,
+            'DeviceOrientation': 1
+        };
+
+        sensors.forEach((id) => {
+            socket.emit('StartMeasurementOnPhone', { userID: id, delay, WhichSensors });
+            console.log(`Started measurement on phone for userID: ${id}`);
+        });
+
         measurements = {};
     } else {
         measureButton.textContent = 'rozpocznij pomiar';
         isMeasuring = false;
 
-        // Po zakończeniu pomiaru zapisz dane w csv
+        sensors.forEach((id) => {
+            socket.emit('StopMeasurementOnPhone', { userID: id });
+            console.log(`Stopped measurement on phone for userID: ${id}`);
+        });
+
         saveCSVButton.textContent = 'Pobierz dane';
         roomspace.appendChild(saveCSVButton);
 
@@ -179,61 +203,68 @@ measureButton.addEventListener('click', () => {
                     const csvContent = createCSV(measurements[userid]);
                     const date = new Date().toISOString().split('T')[0];
                     const fileName = `${userid}-${date}.csv`;
-    
+
                     downloadCSV(csvContent, fileName);
                 }
             }
-        })
+        });
     }
 });
 
 // jeśli rozpoczęto pomiar dodaj nowe dane
-socket.on('sensorData', (data) => {
-    if (isMeasuring) {
-        if (!measurements[data.userid]) {
-            measurements[data.userid] = [];
-        }
-        
-        measurements[data.userid].push({
 
-            ax: data.ax,
-            ay: data.ay,
-            az: data.az,
-            gx: data.gx,
-            gy: data.gy,
-            gz: data.gz,
-            mx: data.mx,
-            my: data.my,
-            mz: data.mz,
-            dmx: data.dmx,
-            dmy: data.dmy,
-            dmz: data.dmz,
-            dox: data.dox,
-            doy: data.doy,
-            doz: data.doz,
+function handleGameSensorData(data) {
+    const platform = document.getElementById('platform');
+    if (platform) {
+        platform.style.width = `${data.dox}px`; 
+        platform.style.height = `${data.doy}px`;
+    }
+}
 
-            timestamp: data.timestamp
-        });
-
-        const PlaceToShowData = document.getElementById(`${data.userid}-PlaceToShowData`);
-        PlaceToShowData.innerHTML = `ax = ${data.ax}, ay = ${data.ay}, az = ${data.az}<br>
-                gx = ${data.gx}, gy = ${data.gy}, gz = ${data.gz} <br>
-                mx = ${data.mx}, my = ${data.my}, mz = ${data.mz} <br>
-                dmx = ${data.dmx}, dmy = ${data.dmy}, dmz = ${data.dmz} <br>
-                dox = ${data.dox}, doy = ${data.doy}, mz = ${data.doz} <br>
-                userID = ${data.userid}`;
+function handleMeasurementSensorData(data) {
+    if (!measurements[data.userid]) {
+        measurements[data.userid] = [];
     }
 
-    if (isPlaying) {
-        // width of div with id 'platform' = data.alpha
-        // height of div with id 'platform' = data.beta
-        const platform = document.getElementById('platform');
+    measurements[data.userid].push({
+        ax: data.ax,
+        ay: data.ay,
+        az: data.az,
+        gx: data.gx,
+        gy: data.gy,
+        gz: data.gz,
+        mx: data.mx,
+        my: data.my,
+        mz: data.mz,
+        dmx: data.dmx,
+        dmy: data.dmy,
+        dmz: data.dmz,
+        dox: data.dox,
+        doy: data.doy,
+        doz: data.doz,
+        timestamp: data.timestamp
+    });
 
-        platform.style.width = `${data.dox}px`; // Set width dynamically
-        platform.style.height = `${data.doy}px`; // Set height dynamically
+    const PlaceToShowData = document.getElementById(`${data.userid}-PlaceToShowData`);
+    if (PlaceToShowData) {
+        PlaceToShowData.innerHTML = `ax = ${data.ax}, ay = ${data.ay}, az = ${data.az}<br>
+            gx = ${data.gx}, gy = ${data.gy}, gz = ${data.gz} <br>
+            mx = ${data.mx}, my = ${data.my}, mz = ${data.mz} <br>
+            dmx = ${data.dmx}, dmy = ${data.dmy}, dmz = ${data.dmz} <br>
+            dox = ${data.dox}, doy = ${data.doy}, doz = ${data.doz} <br>
+            userID = ${data.userid}`;
+    }
+}
+
+// Sensor data event listener
+socket.on('sensorData', (data) => {
+    if (isPlaying) {
+        handleGameSensorData(data);
+    }
+    if (isMeasuring) {
+        handleMeasurementSensorData(data);
     }
 });
-
 function createCSV(dataArray) {
     if (dataArray.length === 0) return '';
 
