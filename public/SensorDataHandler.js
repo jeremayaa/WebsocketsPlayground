@@ -2,26 +2,6 @@ export class SensorDataHandler {
     constructor(socket) {
         this.socket = socket;
 
-        // this.ax = 0;
-        // this.ay = 0;
-        // this.az = 0;
-
-        // this.gx = 0;
-        // this.gy = 0;
-        // this.gz = 0;
-
-        // this.mx = 0;
-        // this.my = 0;
-        // this.mz = 0;
-
-        // this.dmx = 0;
-        // this.dmy = 0;
-        // this.dmz = 0;
-
-        // this.dox = 0;
-        // this.doy = 0;
-        // this.doz = 0;
-
         this.interval = null;
         this.baseTimestamp = null;
 

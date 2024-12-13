@@ -1,6 +1,5 @@
 import { SensorDataHandler } from './SensorDataHandler.js';
 
-
 const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 const deviceType = isMobile ? 'phone' : 'computer';
 console.log(deviceType);
@@ -8,9 +7,10 @@ console.log(deviceType);
 const content = document.getElementById('content');
 content.innerHTML = `${deviceType}`;
 
-// wygodny divek do wyświetlania wiadomości do debugowania
+
 const messagesDiv = document.getElementById('messages');
 const roomspace = document.getElementById('roomspace');
+
 
 const socket = io();
 
@@ -18,7 +18,6 @@ const socket = io();
 const sensorHandler = new SensorDataHandler(socket);
 
 let userID = localStorage.getItem('userID');
-
 
 // jeśli nie ustawiono username, zapisz utwórz go i zapisz w localstorage.
 if (!userID) {
@@ -50,18 +49,16 @@ const saveCSVButton = document.createElement('button');
 const gameButton = document.createElement('button');
 
 if (deviceType==='computer') {
-    // na komputerze dodaj przycisk 'rozpocznij pomiar'
     measureButton.textContent = 'rozpocznij pomiar';
     gameButton.textContent = 'rozpocznij grę';
 
-    roomspace.appendChild(measureButton);
-    roomspace.appendChild(gameButton);
+    content.appendChild(measureButton);
+    content.appendChild(gameButton);
 }
 
 let sensors = [];
 
 socket.on('AvailableSensors', ({AvailableSensors, userID}) => {
-
     const LeftPanelDeviceInfo = document.createElement('p');
     LeftPanelDeviceInfo.id = `${userID}-LeftPanelDeviceInfo`;
     
@@ -85,25 +82,18 @@ socket.on('AvailableSensors', ({AvailableSensors, userID}) => {
         messagesDiv.appendChild(EnableDeviceCheckbox);
     }
 
-    // po kliknięciu checkboxa rozpocznij pomiar / po odkliknięciu zakończ
+    // po kliknięciu checkboxa dodaj sensor do listy
     const EnableDeviceCheckbox = document.getElementById(`${userID}-checkbox`);
 
     EnableDeviceCheckbox.addEventListener('click', () => {
         if (EnableDeviceCheckbox.checked) {
-            const PlaceToShowData = document.createElement('p');
-            PlaceToShowData.id = `${userID}-PlaceToShowData`;
-            PlaceToShowData.textContent = `Device enabled for user ${userID}`;
-            roomspace.appendChild(PlaceToShowData);
             sensors.push(userID);
             console.log(`Device enabled for userID: ${userID}`);
         } else {
-            const PlaceToShowData = document.getElementById(`${userID}-PlaceToShowData`);
-            roomspace.removeChild(PlaceToShowData);
             sensors = sensors.filter(id => id !== userID);
             console.log(`Device disabled for userID: ${userID}`);
         }
     });
-    
 });
 
 // Usuń checkbox umożliwiający pomiar dla sensorów które wyszły z pokoju
@@ -124,11 +114,11 @@ socket.on('SendInfoAboutDisconnection', (userID) => {
 }) 
 
 let isPlaying = false;
-
 gameButton.addEventListener('click', () => {
     if (gameButton.textContent === 'rozpocznij grę') {
         gameButton.textContent = 'zakończ grę';
         isPlaying = true;
+        roomspace.innerHTML='';
 
         let platform = document.createElement('div');
         platform.id = 'platform';
@@ -136,10 +126,10 @@ gameButton.addEventListener('click', () => {
 
         let delay = 50;
         let WhichSensors = {
-            'Accelerometer': 1,
-            'Gyroscope': 1,
+            'Accelerometer': 0,
+            'Gyroscope': 0,
             'Magnetometer': 0,
-            'DeviceMotion': 1,
+            'DeviceMotion': 0,
             'DeviceOrientation': 1
         };
 
@@ -157,8 +147,12 @@ gameButton.addEventListener('click', () => {
             console.log(`Stopped game measurement on phone for userID: ${id}`);
         });
 
+        
+
         const platform = document.getElementById('platform');
-        if (platform) roomspace.removeChild(platform);
+        if (platform) {
+            roomspace.removeChild(platform)
+        };
     }
 });
 
@@ -166,8 +160,11 @@ let measurements = {};
 let isMeasuring = false;
 
 measureButton.addEventListener('click', () => {
+
     if (measureButton.textContent === 'rozpocznij pomiar') {
         measureButton.textContent = 'zakończ pomiar';
+        roomspace.innerHTML='';
+
         isMeasuring = true;
 
         let delay = 100;
@@ -180,11 +177,21 @@ measureButton.addEventListener('click', () => {
         };
 
         sensors.forEach((id) => {
+            let AvailableSensorsCheckbox = document.createElement('p');
+            AvailableSensorsCheckbox.innerHTML = `sensor ${id}`;
+
+            roomspace.appendChild(AvailableSensorsCheckbox);
+            const PlaceToShowData = document.createElement('p');
+            PlaceToShowData.id = `${id}-PlaceToShowData`;
+            PlaceToShowData.textContent = `Device enabled for user ${id}`;
+            roomspace.appendChild(PlaceToShowData);
+
             socket.emit('StartMeasurementOnPhone', { userID: id, delay, WhichSensors });
             console.log(`Started measurement on phone for userID: ${id}`);
         });
 
         measurements = {};
+
     } else {
         measureButton.textContent = 'rozpocznij pomiar';
         isMeasuring = false;
@@ -211,7 +218,6 @@ measureButton.addEventListener('click', () => {
     }
 });
 
-// jeśli rozpoczęto pomiar dodaj nowe dane
 
 function handleGameSensorData(data) {
     const platform = document.getElementById('platform');
@@ -265,6 +271,7 @@ socket.on('sensorData', (data) => {
         handleMeasurementSensorData(data);
     }
 });
+
 function createCSV(dataArray) {
     if (dataArray.length === 0) return '';
 
