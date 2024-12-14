@@ -35,10 +35,3 @@ input {
 button { 
     padding: 10px 20px; 
 }
-
-
-#platform {
-    height: 100px;
-    width: 100px;
-    background-color: aqua;
-}
