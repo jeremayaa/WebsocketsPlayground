@@ -6,23 +6,48 @@
     <title>Rehabilitacja wspomagana sensorem IMU</title>
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
 </head>
 <body>
-    <h1>Rehabilitacja wspomagana sensorem IMU</h1>
-    <div id="content"></div>
-    <br><br>
-    <div class="container">
-        <div id="messages"></div>
-        <div id="roomspace">
+    <div id="description-section" class="section">
+        <h1>Rehabilitacja wspomagana sensorem IMU</h1>
+        <p>Opis rehabilitacji wspomaganej sensorem IMU (do edycji).</p>
+        <button id="scroll-button">Rozpocznij</button>
+    </div>
 
+    <div id="content-section" class="section">
+        <div id="toolbar">Toolbar</div>
+        <div class="container">
+            <div id="leftPanel">
+                Left Panel<br>Panel Content
+                <button id="toggle-button">&lt;</button>
+            </div>
+            <div id="roomspace">Roomspace<br>Main Content</div>
         </div>
-        
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
-
     <script type="module" src="script.js"></script>
+    <script>
+        document.getElementById('scroll-button').addEventListener('click', function() {
+            window.scrollBy({
+                top: window.innerHeight,
+                behavior: 'smooth'
+            });
+        });
+
+        const leftPanel = document.getElementById('leftPanel');
+        const roomspace = document.getElementById('roomspace');
+        const toggleButton = document.getElementById('toggle-button');
+
+        toggleButton.addEventListener('click', () => {
+            if (leftPanel.classList.contains('hidden')) {
+                leftPanel.classList.remove('hidden');
+                toggleButton.innerHTML = '&lt;';
+            } else {
+                leftPanel.classList.add('hidden');
+                toggleButton.innerHTML = '&gt;';
+            }
+        });
     </script>
 </body>
 </html>

@@ -10,11 +10,24 @@ export class SensorDataHandler {
         // this.deviceType = window.innerWidth > 600 ? 'computer' : 'phone';
         const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
         this.deviceType = isMobile ? 'phone' : 'computer';
+    }
 
-        // console.log('Device Type Detected:', this.deviceType);
-        // if (this.deviceType === 'phone') {
-        //     this.initializeSensors();
-        // }
+    initializeListeners() {
+        this.socket.on('getAvailableSensors', (userID) => {
+            this.getAvailableSensors(userID);
+        })  
+
+        this.socket.on('initializeSensors', (WhichSensors) => {
+            this.initializePhoneSensors(WhichSensors);
+        })
+
+        this.socket.on('StartCapturingSensorData', (data) => {
+            this.startCapturing(data);
+        });
+
+        this.socket.on('StopCapturingSensorData', () => {
+            this.stopCapturing();
+        });
     }
 
     getAvailableSensors(userID) {
@@ -46,24 +59,6 @@ export class SensorDataHandler {
         // return AvailableSensors
     }
 
-
-    initializeListeners() {
-        this.socket.on('getAvailableSensors', (userID) => {
-            this.getAvailableSensors(userID);
-        })  
-
-        this.socket.on('initializeSensors', (WhichSensors) => {
-            this.initializePhoneSensors(WhichSensors);
-        })
-
-        this.socket.on('StartCapturingSensorData', (data) => {
-            this.startCapturing(data);
-        });
-
-        this.socket.on('StopCapturingSensorData', () => {
-            this.stopCapturing();
-        });
-    }
 
     initializePhoneSensors(WhichSensors) {
         

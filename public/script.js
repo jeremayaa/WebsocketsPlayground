@@ -6,10 +6,10 @@ const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 const deviceType = isMobile ? 'phone' : 'computer';
 console.log(deviceType);
 
-const content = document.getElementById('content');
+const content = document.getElementById('toolbar');
 content.innerHTML = `${deviceType}`;
 
-const messagesDiv = document.getElementById('messages');
+const messagesDiv = document.getElementById('leftPanel');
 const roomspace = document.getElementById('roomspace');
 
 const socket = io();

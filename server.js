@@ -16,7 +16,7 @@ const options = {
 
 const server = https.createServer(options, app);
 const io = socketIo(server);
-const PORT = 3000;
+const PORT = 4000;
 
 // res.setHeader('Permissions-Policy', 'magnetometer=*');
 app.use((req, res, next) => {

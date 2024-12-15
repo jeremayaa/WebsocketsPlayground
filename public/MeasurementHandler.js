@@ -1,7 +1,5 @@
-
 export function startMeasurement(sensors, socket, roomspace, measurements) {
     roomspace.innerHTML = '';
-
 
     let delay = 50;
     let WhichSensors = {

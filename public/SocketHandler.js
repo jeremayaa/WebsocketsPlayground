@@ -15,12 +15,23 @@ class SocketHandler {
                 if (isMobile) {
                     this.io.to(socket.id).emit('getAvailableSensors', userID);
                 }
-                // this.io.emit('SendInfoAboutJoining', userID);
-                 
             });
 
-            socket.on('StartMeasurementOnPhone', (data) => {
+            socket.on('AvailableSensors', ({AvailableSensors, userID}) => {
 
+                console.log(`availbleSensors for ${userID}}:
+                        Accelerometer: ${AvailableSensors['Accelerometer']},
+                        Gyroscope: ${AvailableSensors['Gyroscope']},
+                        Magnetometer: ${AvailableSensors['Magnetometer']},
+                        OrientationEvent: ${AvailableSensors['OrientationEvent']},
+                        MotionEvent: ${AvailableSensors['MotionEvent']}
+
+                        `);
+                        
+                this.io.emit('AvailableSensors', { AvailableSensors, userID });
+            })
+
+            socket.on('StartMeasurementOnPhone', (data) => {
                 const { userID, delay, WhichSensors } = data;
                 const phoneSocketId = this.clients[userID];
 
@@ -45,27 +56,15 @@ class SocketHandler {
                 this.io.emit('sensorData', data);
             });
 
+
+
             socket.on('MagetometerError', () => {
                 console.log('MagetometerError');
             });
 
-            socket.on('AvailableSensors', ({AvailableSensors, userID}) => {
-
-                console.log(`availbleSensors for ${userID}}:
-                        Accelerometer: ${AvailableSensors['Accelerometer']},
-                        Gyroscope: ${AvailableSensors['Gyroscope']},
-                        Magnetometer: ${AvailableSensors['Magnetometer']},
-                        OrientationEvent: ${AvailableSensors['OrientationEvent']},
-                        MotionEvent: ${AvailableSensors['MotionEvent']}
-
-                        `);
-                this.io.emit('AvailableSensors', { AvailableSensors, userID });
-            })
-
             socket.on('GyroscopeError', () => {
                 console.log('GyroscopeError');
             });
-
 
             socket.on('disconnect', () => {
                 console.log('Client disconnected:', socket.id);
