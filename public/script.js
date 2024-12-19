@@ -1,6 +1,6 @@
 import { SensorDataHandler } from './SensorDataHandler.js';
-import { startGame, stopGame } from './GameHandler.js';
-import { startMeasurement, stopMeasurement } from './MeasurementHandler.js';
+import { startGame, stopGame } from './BalanceGame/GameHandler.js';
+import { startMeasurement, stopMeasurement } from './Measurement/MeasurementHandler.js';
 
 const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 const deviceType = isMobile ? 'phone' : 'computer';
@@ -9,7 +9,7 @@ console.log(deviceType);
 const content = document.getElementById('toolbar');
 content.innerHTML = `${deviceType}`;
 
-const messagesDiv = document.getElementById('leftPanel');
+const LeftPanelDiv= document.getElementById('leftPanel');
 const roomspace = document.getElementById('roomspace');
 
 const socket = io();
@@ -46,7 +46,7 @@ if (userID) {
 // On computer, add a select element and start button
 if (deviceType === 'computer') {
     const actionSelect = document.createElement('select');
-    const startButton = document.createElement('button');
+    // const startButton = document.createElement('button');
 
     const measureOption = document.createElement('option');
     measureOption.value = 'measure';
@@ -59,14 +59,14 @@ if (deviceType === 'computer') {
     actionSelect.appendChild(measureOption);
     actionSelect.appendChild(gameOption);
 
-    startButton.textContent = 'Start';
+    // startButton.textContent = 'Start';
 
-    content.appendChild(actionSelect);
-    content.appendChild(startButton);
+    LeftPanelDiv.appendChild(actionSelect);
+    // LeftPanelDiv.appendChild(startButton);
 
     let sensors = [];
-    let isActionActive = false;
-    let measurements = {};
+    // let isActionActive = false;
+    // let measurements = {};
 
     socket.on('AvailableSensors', ({ AvailableSensors, userID }) => {
         const LeftPanelDeviceInfo = document.createElement('p');
@@ -80,13 +80,13 @@ if (deviceType === 'computer') {
                             OrientationEvent: ${AvailableSensors['OrientationEvent']},
                             MotionEvent: ${AvailableSensors['MotionEvent']}`;
 
-            messagesDiv.appendChild(LeftPanelDeviceInfo);
+            LeftPanelDiv.appendChild(LeftPanelDeviceInfo);
 
             const EnableDeviceCheckbox = document.createElement('input');
             EnableDeviceCheckbox.type = 'checkbox';
             EnableDeviceCheckbox.id = `${userID}-checkbox`;
 
-            messagesDiv.appendChild(EnableDeviceCheckbox);
+            LeftPanelDiv.appendChild(EnableDeviceCheckbox);
 
             EnableDeviceCheckbox.addEventListener('click', () => {
                 if (EnableDeviceCheckbox.checked) {
@@ -104,6 +104,8 @@ if (deviceType === 'computer') {
         const checkbox = document.getElementById(`${userID}-checkbox`);
         const LeftPanelSensorInfo = document.getElementById(`${userID}-LeftPanelDeviceInfo`);
 
+        sensors = sensors.filter(id => id !== userID);
+
         if (checkbox) {
             messagesDiv.removeChild(checkbox);
         }
@@ -112,27 +114,68 @@ if (deviceType === 'computer') {
         }
     });
 
-    startButton.addEventListener('click', () => {
-        const selectedAction = actionSelect.value;
-        if (isActionActive) {
-            if (selectedAction === 'game') {
-                stopGame(sensors, socket);
-            } else if (selectedAction === 'measure') {
+    // startButton.addEventListener('click', () => {
+    //     const selectedAction = actionSelect.value;
+    //     if (isActionActive) {
+    //         if (selectedAction === 'game') {
+    //             stopGame(sensors, socket);
+    //         } else if (selectedAction === 'measure') {
+    //             stopMeasurement(sensors, socket, roomspace, measurements);
+    //             measurements = {};
+    //         }
+
+    //         startButton.textContent = 'Start';
+    //         isActionActive = false;
+    //     } else {
+    //         if (selectedAction === 'game') {
+    //             startGame(sensors, socket, roomspace);
+    //         } else if (selectedAction === 'measure') {
+    //             startMeasurement(sensors, socket, roomspace, measurements);
+    //         }
+
+    //         startButton.textContent = 'Stop';
+    //         isActionActive = true;
+    //     }
+    // });
+
+    const actions = {
+        game: {
+            start: (sensors, socket, roomspace) => startGame(sensors, socket, roomspace),
+            stop: (sensors, socket) => stopGame(sensors, socket)
+        },
+        measure: {
+            start: (sensors, socket, roomspace, measurements) => startMeasurement(sensors, socket, roomspace, measurements),
+            stop: (sensors, socket, roomspace, measurements) => {
                 stopMeasurement(sensors, socket, roomspace, measurements);
-                measurements = {};
+                measurements = {}; // Reset measurements
             }
-
-            startButton.textContent = 'Start';
-            isActionActive = false;
-        } else {
-            if (selectedAction === 'game') {
-                startGame(sensors, socket, roomspace);
-            } else if (selectedAction === 'measure') {
-                startMeasurement(sensors, socket, roomspace, measurements);
-            }
-
-            startButton.textContent = 'Stop';
-            isActionActive = true;
         }
+        // Add more actions here in the future
+    };
+    
+    let currentAction = null;
+    let measurements = {}; // To handle the 'measure' action
+    
+    // Listen to changes in the action selector
+    actionSelect.addEventListener('change', () => {
+        const selectedAction = actionSelect.value;
+    
+        // Stop the current action if there is one
+        if (currentAction && actions[currentAction] && actions[currentAction].stop) {
+            actions[currentAction].stop(sensors, socket, roomspace, measurements);
+        }
+    
+        // Start the newly selected action
+        if (actions[selectedAction] && actions[selectedAction].start) {
+            actions[selectedAction].start(sensors, socket, roomspace, measurements);
+        }
+    
+        // Update the current action
+        currentAction = selectedAction;
     });
+    
+    // Optionally, trigger the initial action on page load if a default is set
+    if (actionSelect.value) {
+        actionSelect.dispatchEvent(new Event('change'));
+    }
 }
