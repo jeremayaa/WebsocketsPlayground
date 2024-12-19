@@ -157,6 +157,7 @@ export class SensorDataHandler {
 
     startCapturing(data) {
         if (this.deviceType === 'phone') {
+            this.baseTimestamp = null;
             this.interval = setInterval(() => this.sendData(data.userID), data.delay); // 30 times per second
         }
     }
@@ -166,6 +167,11 @@ export class SensorDataHandler {
     }
     
     sendData(userID) {
+
+        if (this.baseTimestamp === null) {
+            this.baseTimestamp = performance.now(); // Set to current high-resolution time
+        }
+        
         const currentTime = performance.now(); // High-resolution timestamp
         const elapsedTime = (currentTime - this.baseTimestamp).toFixed(0); // Time since start
 

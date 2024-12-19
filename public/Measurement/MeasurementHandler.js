@@ -1,4 +1,4 @@
-export function startMeasurement(sensors, socket, roomspace, measurements) {
+export function startMeasurement(devices, socket, roomspace, measurements) {
     roomspace.innerHTML = '';
 
     let delay = 50;
@@ -14,7 +14,7 @@ export function startMeasurement(sensors, socket, roomspace, measurements) {
         handleMeasurementSensorData(data, measurements);
     });
 
-    sensors.forEach((id) => {
+    devices.forEach((id) => {
         let AvailableSensorsCheckbox = document.createElement('p');
         AvailableSensorsCheckbox.innerHTML = `sensor ${id}`;
         roomspace.appendChild(AvailableSensorsCheckbox);
@@ -29,9 +29,9 @@ export function startMeasurement(sensors, socket, roomspace, measurements) {
     });
 }
 
-export function stopMeasurement(sensors, socket, roomspace, measurements) {
+export function stopMeasurement(devices, socket, roomspace, measurements) {
 
-    sensors.forEach((id) => {
+    devices.forEach((id) => {
         socket.emit('StopMeasurementOnPhone', { userID: id });
         console.log(`Stopped measurement on phone for userID: ${id}`);
     });
@@ -84,6 +84,7 @@ function handleMeasurementSensorData(data, measurements) {
             mx = ${data.mx}, my = ${data.my}, mz = ${data.mz} <br>
             dmx = ${data.dmx}, dmy = ${data.dmy}, dmz = ${data.dmz} <br>
             dox = ${data.dox}, doy = ${data.doy}, doz = ${data.doz} <br>
+            timestamp = ${data.timestamp} <br>
             userID = ${data.userid}`;
     }
 }

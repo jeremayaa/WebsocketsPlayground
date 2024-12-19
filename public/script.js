@@ -64,7 +64,7 @@ if (deviceType === 'computer') {
     LeftPanelDiv.appendChild(actionSelect);
     // LeftPanelDiv.appendChild(startButton);
 
-    let sensors = [];
+    let devices = [];
     // let isActionActive = false;
     // let measurements = {};
 
@@ -90,10 +90,10 @@ if (deviceType === 'computer') {
 
             EnableDeviceCheckbox.addEventListener('click', () => {
                 if (EnableDeviceCheckbox.checked) {
-                    sensors.push(userID);
+                    devices.push(userID);
                     console.log(`Device enabled for userID: ${userID}`);
                 } else {
-                    sensors = sensors.filter(id => id !== userID);
+                    devices = devices.filter(id => id !== userID);
                     console.log(`Device disabled for userID: ${userID}`);
                 }
             });
@@ -104,49 +104,26 @@ if (deviceType === 'computer') {
         const checkbox = document.getElementById(`${userID}-checkbox`);
         const LeftPanelSensorInfo = document.getElementById(`${userID}-LeftPanelDeviceInfo`);
 
-        sensors = sensors.filter(id => id !== userID);
+        devices = devices.filter(id => id !== userID);
 
         if (checkbox) {
-            messagesDiv.removeChild(checkbox);
+            LeftPanelDiv.removeChild(checkbox);
         }
         if (LeftPanelSensorInfo) {
-            messagesDiv.removeChild(LeftPanelSensorInfo);
+            LeftPanelDiv.removeChild(LeftPanelSensorInfo);
         }
     });
 
-    // startButton.addEventListener('click', () => {
-    //     const selectedAction = actionSelect.value;
-    //     if (isActionActive) {
-    //         if (selectedAction === 'game') {
-    //             stopGame(sensors, socket);
-    //         } else if (selectedAction === 'measure') {
-    //             stopMeasurement(sensors, socket, roomspace, measurements);
-    //             measurements = {};
-    //         }
-
-    //         startButton.textContent = 'Start';
-    //         isActionActive = false;
-    //     } else {
-    //         if (selectedAction === 'game') {
-    //             startGame(sensors, socket, roomspace);
-    //         } else if (selectedAction === 'measure') {
-    //             startMeasurement(sensors, socket, roomspace, measurements);
-    //         }
-
-    //         startButton.textContent = 'Stop';
-    //         isActionActive = true;
-    //     }
-    // });
 
     const actions = {
         game: {
-            start: (sensors, socket, roomspace) => startGame(sensors, socket, roomspace),
-            stop: (sensors, socket) => stopGame(sensors, socket)
+            start: (devices, socket, roomspace) => startGame(devices, socket, roomspace),
+            stop: (devices, socket) => stopGame(devices, socket)
         },
         measure: {
-            start: (sensors, socket, roomspace, measurements) => startMeasurement(sensors, socket, roomspace, measurements),
-            stop: (sensors, socket, roomspace, measurements) => {
-                stopMeasurement(sensors, socket, roomspace, measurements);
+            start: (devices, socket, roomspace, measurements) => startMeasurement(devices, socket, roomspace, measurements),
+            stop: (devices, socket, roomspace, measurements) => {
+                stopMeasurement(devices, socket, roomspace, measurements);
                 measurements = {}; // Reset measurements
             }
         }
@@ -162,12 +139,12 @@ if (deviceType === 'computer') {
     
         // Stop the current action if there is one
         if (currentAction && actions[currentAction] && actions[currentAction].stop) {
-            actions[currentAction].stop(sensors, socket, roomspace, measurements);
+            actions[currentAction].stop(devices, socket, roomspace, measurements);
         }
     
         // Start the newly selected action
         if (actions[selectedAction] && actions[selectedAction].start) {
-            actions[selectedAction].start(sensors, socket, roomspace, measurements);
+            actions[selectedAction].start(devices, socket, roomspace, measurements);
         }
     
         // Update the current action
