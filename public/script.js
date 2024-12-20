@@ -127,7 +127,7 @@ if (deviceType === 'computer') {
         },
         measure: {
             start: (socket, roomspace) => startMeasurement(socket, roomspace),
-            stop: (socket, roomspace) => stopMeasurement(devices, socket, roomspace, measurements)
+            stop: (socket, roomspace) => stopMeasurement(socket, roomspace)
         },
         debug: {
             start: (socket, roomspace) => init(socket, roomspace),

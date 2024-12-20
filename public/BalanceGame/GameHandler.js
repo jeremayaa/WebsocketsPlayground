@@ -1,105 +1,136 @@
-export function startGame(sensors, socket, roomspace) {
+// Main game logic
+let devices = {};
+let ballPosition = { x: 0, y: 0 }; // Ball position relative to the center
+let ballVelocity = { x: 0, y: 0 }; // Ball velocity
+const gravity = 0.5; // Simulated gravity
+
+export function startGame(socket, roomspace) {
+    devices = {};
     roomspace.innerHTML = '';
 
+    socket.on('selectedDevices', (data) => {
+        devices = data;
+        console.log(`Selected devices: ${devices}`);
+
+        devices.forEach((id) => {
+            socket.emit('StartMeasurementOnPhone', {
+                userID: id,
+                delay: 50,
+                WhichSensors: {
+                    'Accelerometer': 0,
+                    'Gyroscope': 0,
+                    'Magnetometer': 0,
+                    'DeviceMotion': 0,
+                    'DeviceOrientation': 1
+                }
+            });
+            console.log(`Started game measurement on phone for userID: ${id}`);
+        });
+    });
+
+    // Create platform and ball elements
     let platform = document.createElement('div');
     platform.id = 'platform';
+    platform.style.position = 'relative';
+    platform.style.width = '300px';
+    platform.style.height = '300px';
+    platform.style.backgroundColor = '#ccc';
+    platform.style.border = '2px solid #333';
+    platform.style.transformOrigin = 'center';
+    platform.style.perspective = '1000px';
     roomspace.appendChild(platform);
 
     let ball = document.createElement('div');
     ball.id = 'ball';
+    ball.style.position = 'absolute';
+    ball.style.width = '20px';
+    ball.style.height = '20px';
+    ball.style.backgroundColor = 'red';
+    ball.style.borderRadius = '50%';
+    ball.style.left = '50%';
+    ball.style.top = '50%';
+    ball.style.transform = 'translate(-50%, -50%)';
     platform.appendChild(ball);
 
-    let delay = 50;
-    let WhichSensors = {
-        'Accelerometer': 0,
-        'Gyroscope': 0,
-        'Magnetometer': 0,
-        'DeviceMotion': 0,
-        'DeviceOrientation': 1
-    };
-
+    // Listen for sensor data
     socket.on('sensorData', (data) => {
         handleGameSensorData(data);
     });
 
-    sensors.forEach((id) => {
-        socket.emit('StartMeasurementOnPhone', { userID: id, delay, WhichSensors });
-        console.log(`Started game measurement on phone for userID: ${id}`);
-    });
+    // Start animation loop
+    animate(ball, platform);
 }
 
-export function stopGame(sensors, socket) {
-    sensors.forEach((id) => {
+export function stopGame(devices, socket) {
+    devices.forEach((id) => {
         socket.emit('StopMeasurementOnPhone', { userID: id });
         console.log(`Stopped game on phone for userID: ${id}`);
     });
 }
 
-let ballPositionX = 250; // Starting at the center of the platform
-let ballMovementInterval;
-
 function handleGameSensorData(data) {
     const platform = document.getElementById('platform');
-    const ball = document.getElementById('ball');
-    if (platform && ball) {
-        // Apply rotation based on the input degrees (doy and doz are assumed to be in degrees)
-        const rotationAngleA = `${data.doy}deg`; // Y-axis rotation (for horizontal tilt)
-        const rotationAngleB = `${-data.doz}deg`; // Z-axis rotation (for front-back tilt)
+    if (platform) {
+        // Map sensor data to platform rotation angles
+        const pitch = -parseFloat(data.doy) || 0; // Y-axis rotation
+        const yaw = parseFloat(data.doz) || 0; // Z-axis rotation
 
-        // Combine both rotations in a single transform statement
-        platform.style.transform = `rotateY(${rotationAngleB}) rotateX(${rotationAngleA})`;
+        platform.style.transform = `rotateX(${pitch}deg) rotateY(${yaw}deg)`;
 
-        // Calculate the gradient based on the rotation angles
-        const gradientIntensity = Math.min(1, Math.abs(data.doy) / 90 + Math.abs(data.doz) / 90); // Max intensity when rotating by 90 degrees
-
-        // Adjust the gradient based on the rotation magnitude
-        const gradient = `linear-gradient(
-            135deg, 
-            rgba(255, 255, 255, ${1 - gradientIntensity}) 0%, 
-            rgba(169, 169, 169, ${gradientIntensity}) 100%
-        )`;
-
-        // Apply the gradient as the background
-        platform.style.backgroundImage = gradient;
-
-        // Clear the previous interval if any
-        if (ballMovementInterval) clearInterval(ballMovementInterval);
-
-        // Calculate the ball movement speed based on rotationAngleB
-        const speed = Math.abs(parseFloat(rotationAngleB));
-
-        // Move the ball to the left at a rate proportional to the speed
-        if (speed > 0) {
-            ballMovementInterval = setInterval(() => {
-                ballPositionX = Math.max(0, ballPositionX - 1); // Prevent the ball from moving off the platform
-                ball.style.left = `${ballPositionX}px`;
-            }, 1000 / speed); // Speed determines the interval (frames per second)
-        }
+        // Pass the tilt angles to update the ball's movement
+        updateBall(pitch, yaw);
     }
 }
 
+function updateBall(pitch, yaw) {
+    const ball = document.getElementById('ball');
 
-const style = document.createElement('style');
-style.textContent = `
-    #platform {
-        height: 500px;
-        width: 500px;
-        border-radius: 50%;
-        background-color: aqua;
-        transform-origin: center;
-        position: relative;
-        overflow: hidden;
+    if (!ball) return;
+
+    // Calculate acceleration based on platform tilt
+    const ax = yaw * gravity / 45; // Yaw affects X-axis acceleration
+    const ay = -pitch * gravity / 45; // Pitch affects Y-axis acceleration
+
+    // Update ball velocity
+    ballVelocity.x += ax;
+    ballVelocity.y += ay;
+
+    // Apply friction
+    ballVelocity.x *= 0.98;
+    ballVelocity.y *= 0.98;
+
+    // Update ball position
+    ballPosition.x += ballVelocity.x;
+    ballPosition.y += ballVelocity.y;
+
+    // Constrain ball to the platform
+    const maxDistance = 140; // Radius of the platform
+    const distance = Math.sqrt(ballPosition.x ** 2 + ballPosition.y ** 2);
+
+    if (distance > maxDistance) {
+        const angle = Math.atan2(ballPosition.y, ballPosition.x);
+        ballPosition.x = maxDistance * Math.cos(angle);
+        ballPosition.y = maxDistance * Math.sin(angle);
+        ballVelocity.x = 0;
+        ballVelocity.y = 0;
     }
 
-    #ball {
-        height: 20px;
-        width: 20px;
-        background-color: red;
-        border-radius: 50%;
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
+    // Update ball position in the DOM
+    ball.style.transform = `translate(${ballPosition.x}px, ${ballPosition.y}px)`;
+}
+
+function resetBall() {
+    ballPosition = { x: 0, y: 0 };
+    ballVelocity = { x: 0, y: 0 };
+    const ball = document.getElementById('ball');
+    if (ball) {
+        ball.style.transform = 'translate(-50%, -50%)';
     }
-`;
-document.head.appendChild(style);
+}
+
+function animate(ball, platform) {
+    if (!ball || !platform) return;
+
+    updateBall(0, 0); // Continue updating ball without changing angles
+    requestAnimationFrame(() => animate(ball, platform));
+}
