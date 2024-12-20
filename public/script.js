@@ -1,6 +1,7 @@
 import { SensorDataHandler } from './SensorDataHandler.js';
 import { startGame, stopGame } from './BalanceGame/GameHandler.js';
 import { startMeasurement, stopMeasurement } from './Measurement/MeasurementHandler.js';
+import { init, terminate } from './Debugging/debugs.js';
 
 const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 const deviceType = isMobile ? 'phone' : 'computer';
@@ -56,8 +57,13 @@ if (deviceType === 'computer') {
     gameOption.value = 'game';
     gameOption.textContent = 'Rozpocznij grę';
 
+    const debugOption = document.createElement('option');
+    debugOption.value = 'debug';
+    debugOption.textContent = 'Rozpocznij debugowanie';
+
     actionSelect.appendChild(measureOption);
     actionSelect.appendChild(gameOption);
+    actionSelect.appendChild(debugOption);
 
     // startButton.textContent = 'Start';
 
@@ -65,8 +71,6 @@ if (deviceType === 'computer') {
     // LeftPanelDiv.appendChild(startButton);
 
     let devices = [];
-    // let isActionActive = false;
-    // let measurements = {};
 
     socket.on('AvailableSensors', ({ AvailableSensors, userID }) => {
         const LeftPanelDeviceInfo = document.createElement('p');
@@ -96,6 +100,7 @@ if (deviceType === 'computer') {
                     devices = devices.filter(id => id !== userID);
                     console.log(`Device disabled for userID: ${userID}`);
                 }
+                socket.emit('selectedDevices', (devices));
             });
         }
     });
@@ -117,15 +122,16 @@ if (deviceType === 'computer') {
 
     const actions = {
         game: {
-            start: (devices, socket, roomspace) => startGame(devices, socket, roomspace),
-            stop: (devices, socket) => stopGame(devices, socket)
+            start: (socket, roomspace) => startGame(socket, roomspace),
+            stop: (socket, roomspace) => stopGame(socket, roomspace)
         },
         measure: {
-            start: (devices, socket, roomspace, measurements) => startMeasurement(devices, socket, roomspace, measurements),
-            stop: (devices, socket, roomspace, measurements) => {
-                stopMeasurement(devices, socket, roomspace, measurements);
-                measurements = {}; // Reset measurements
-            }
+            start: (socket, roomspace) => startMeasurement(socket, roomspace),
+            stop: (socket, roomspace) => stopMeasurement(devices, socket, roomspace, measurements)
+        },
+        debug: {
+            start: (socket, roomspace) => init(socket, roomspace),
+            stop: (socket, roomspace) => terminate(socket, roomspace)
         }
         // Add more actions here in the future
     };
@@ -139,12 +145,12 @@ if (deviceType === 'computer') {
     
         // Stop the current action if there is one
         if (currentAction && actions[currentAction] && actions[currentAction].stop) {
-            actions[currentAction].stop(devices, socket, roomspace, measurements);
+            actions[currentAction].stop(socket, roomspace);
         }
     
         // Start the newly selected action
         if (actions[selectedAction] && actions[selectedAction].start) {
-            actions[selectedAction].start(devices, socket, roomspace, measurements);
+            actions[selectedAction].start(socket, roomspace);
         }
     
         // Update the current action

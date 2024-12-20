@@ -1,4 +1,7 @@
-export function startMeasurement(devices, socket, roomspace, measurements) {
+let measurements = {};
+
+export function startMeasurement(socket, roomspace) {
+    measurements = {};
     roomspace.innerHTML = '';
 
     let delay = 50;
@@ -51,6 +54,8 @@ export function stopMeasurement(devices, socket, roomspace, measurements) {
             }
         }
     });
+
+    roomspace.innerHTML = '';
 }
 
 function handleMeasurementSensorData(data, measurements) {

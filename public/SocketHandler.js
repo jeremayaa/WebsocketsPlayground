@@ -56,7 +56,9 @@ class SocketHandler {
                 this.io.emit('sensorData', data);
             });
 
-
+            socket.on('selectedDevices', (devices) => {
+                this.io.emit('selectedDevices', devices);
+            });
 
             socket.on('MagetometerError', () => {
                 console.log('MagetometerError');
