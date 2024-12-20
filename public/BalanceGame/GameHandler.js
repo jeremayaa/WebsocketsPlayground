@@ -2,11 +2,16 @@
 let devices = {};
 let ballPosition = { x: 0, y: 0 }; // Ball position relative to the center
 let ballVelocity = { x: 0, y: 0 }; // Ball velocity
-const gravity = 0.5; // Simulated gravity
+const gravity = 0.1; // Simulated gravity
 
 export function startGame(socket, roomspace) {
     devices = {};
     roomspace.innerHTML = '';
+
+    roomspace.style.display = 'flex';
+    roomspace.style.justifyContent = 'center';
+    roomspace.style.alignItems = 'center';
+    roomspace.style.height = '100vh';
 
     socket.on('selectedDevices', (data) => {
         devices = data;
@@ -32,14 +37,16 @@ export function startGame(socket, roomspace) {
     let platform = document.createElement('div');
     platform.id = 'platform';
     platform.style.position = 'relative';
-    platform.style.width = '300px';
-    platform.style.height = '300px';
+    platform.style.width = '500px';
+    platform.style.height = '500px';
     platform.style.backgroundColor = '#ccc';
     platform.style.border = '2px solid #333';
+    platform.style.borderRadius = '50%';
     platform.style.transformOrigin = 'center';
     platform.style.perspective = '1000px';
     roomspace.appendChild(platform);
-
+    
+    // Create ball element outside the platform
     let ball = document.createElement('div');
     ball.id = 'ball';
     ball.style.position = 'absolute';
@@ -47,10 +54,8 @@ export function startGame(socket, roomspace) {
     ball.style.height = '20px';
     ball.style.backgroundColor = 'red';
     ball.style.borderRadius = '50%';
-    ball.style.left = '50%';
-    ball.style.top = '50%';
     ball.style.transform = 'translate(-50%, -50%)';
-    platform.appendChild(ball);
+    roomspace.appendChild(ball);
 
     // Listen for sensor data
     socket.on('sensorData', (data) => {
@@ -81,7 +86,6 @@ function handleGameSensorData(data) {
         updateBall(pitch, yaw);
     }
 }
-
 function updateBall(pitch, yaw) {
     const ball = document.getElementById('ball');
 
@@ -104,27 +108,34 @@ function updateBall(pitch, yaw) {
     ballPosition.y += ballVelocity.y;
 
     // Constrain ball to the platform
-    const maxDistance = 140; // Radius of the platform
+    const maxDistance = 250; // Radius of the platform
     const distance = Math.sqrt(ballPosition.x ** 2 + ballPosition.y ** 2);
 
     if (distance > maxDistance) {
-        const angle = Math.atan2(ballPosition.y, ballPosition.x);
-        ballPosition.x = maxDistance * Math.cos(angle);
-        ballPosition.y = maxDistance * Math.sin(angle);
-        ballVelocity.x = 0;
-        ballVelocity.y = 0;
+        resetBall(); // Reset ball to the center if it hits the boundary
     }
 
-    // Update ball position in the DOM
-    ball.style.transform = `translate(${ballPosition.x}px, ${ballPosition.y}px)`;
+    // Position ball relative to platform center
+    const platformRect = document.getElementById('platform').getBoundingClientRect();
+    const centerX = platformRect.left + platformRect.width / 2;
+    const centerY = platformRect.top + platformRect.height / 2;
+
+    ball.style.left = `${centerX + ballPosition.x}px`;
+    ball.style.top = `${centerY + ballPosition.y}px`;
 }
 
 function resetBall() {
     ballPosition = { x: 0, y: 0 };
     ballVelocity = { x: 0, y: 0 };
+
     const ball = document.getElementById('ball');
+    const platformRect = document.getElementById('platform').getBoundingClientRect();
+    const centerX = platformRect.left + platformRect.width / 2;
+    const centerY = platformRect.top + platformRect.height / 2;
+
     if (ball) {
-        ball.style.transform = 'translate(-50%, -50%)';
+        ball.style.left = `${centerX}px`;
+        ball.style.top = `${centerY}px`;
     }
 }
 
