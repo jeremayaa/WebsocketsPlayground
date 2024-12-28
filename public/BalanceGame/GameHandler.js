@@ -8,6 +8,15 @@ export function startGame(socket, roomspace) {
     devices = {};
     roomspace.innerHTML = '';
 
+    let WhichSensors = {
+                        'Accelerometer': 0,
+                        'Gyroscope': 0,
+                        'Magnetometer': 0,
+                        'DeviceMotion': 0,
+                        'DeviceOrientation': 1
+                    };
+    let delay = 50;
+
     roomspace.style.display = 'flex';
     roomspace.style.justifyContent = 'center';
     roomspace.style.alignItems = 'center';
@@ -15,22 +24,30 @@ export function startGame(socket, roomspace) {
 
     socket.on('selectedDevices', (data) => {
         devices = data;
-        console.log(`Selected devices: ${devices}`);
+        console.log(devices);
+    });
 
-        devices.forEach((id) => {
-            socket.emit('StartMeasurementOnPhone', {
-                userID: id,
-                delay: 50,
-                WhichSensors: {
-                    'Accelerometer': 0,
-                    'Gyroscope': 0,
-                    'Magnetometer': 0,
-                    'DeviceMotion': 0,
-                    'DeviceOrientation': 1
-                }
+
+    let measureButton = document.createElement('button');
+    measureButton.textContent = 'Start game';
+    roomspace.appendChild(measureButton);
+
+    measureButton.addEventListener('click', () => {
+        if (measureButton.textContent === 'Start game') {
+            measureButton.textContent = 'Stop game';
+            
+            // Initialize measurements for each device
+            devices.forEach(id => {
+                socket.emit('StartMeasurementOnPhone', { userID: id, delay, WhichSensors });
             });
-            console.log(`Started game measurement on phone for userID: ${id}`);
-        });
+
+        } else {
+            measureButton.textContent = 'Start game';
+            
+            devices.forEach(id => {
+                socket.emit('StopMeasurementOnPhone', { userID: id });
+            });
+        }
     });
 
     // Create platform and ball elements
@@ -66,7 +83,9 @@ export function startGame(socket, roomspace) {
     animate(ball, platform);
 }
 
-export function stopGame(devices, socket) {
+export function stopGame(socket, roomspace) {
+    roomspace.innerHTML = '';
+
     devices.forEach((id) => {
         socket.emit('StopMeasurementOnPhone', { userID: id });
         console.log(`Stopped game on phone for userID: ${id}`);

@@ -137,7 +137,7 @@ if (deviceType === 'computer') {
     };
     
     let currentAction = null;
-    let measurements = {}; // To handle the 'measure' action
+    // let measurements = {}; // To handle the 'measure' action
     
     // Listen to changes in the action selector
     actionSelect.addEventListener('change', () => {

@@ -5,6 +5,7 @@ let measurements = {}; // Object to store data for each device
 export function init(socket, roomspace) {
     devices = {};
     measurements = {}; // Initialize measurements object
+    roomspace.innerHTML = '';
 
     let devicesParagraph = document.createElement('p');
     roomspace.appendChild(devicesParagraph);
@@ -81,6 +82,10 @@ export function init(socket, roomspace) {
 };
 
 export function terminate(socket, roomspace) {
+    devices.forEach((id) => {
+        socket.emit('StopMeasurementOnPhone', { userID: id });
+        console.log(`Stopped measurement on phone for userID: ${id}`);
+    });
     roomspace.innerHTML = '';
 };
 
